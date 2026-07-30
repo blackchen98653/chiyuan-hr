@@ -1,0 +1,1287 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no"/>
+<meta name="theme-color" content="#E8832A"/>
+<title>季緣 SM 技能評核</title>
+<!--
+══════════════════════════════════════════════════════════════════════════
+ 季緣 SM 技能評核 v2
+ - 給門市主管在手機上評核夥伴 27 項技能
+ - 每個技能 5 等級：未接觸 / 需協助 / 可獨立 / 熟練 / 精熟
+ - 自動存到瀏覽器（localStorage）：重新打開連結會自動載入最後一次
+ - 送出後產生「同步碼」(JSON)，店長複製貼回總部 = 總部直接「匯入評核」即可同步戰情室
+ - 進階：若有部署 Google Apps Script Web App，可填入 SYNC_URL 自動雲端同步
+══════════════════════════════════════════════════════════════════════════
+-->
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg:#F5F6FA;--bg2:#FFFFFF;--bg3:#F0F2F8;--bg4:#E8EBF4;
+  --border:#E2E6F0;--border2:#CDD3E8;
+  --accent:#E8832A;--accent2:#F5A623;
+  --blue:#2E6FD8;--green:#16A76A;--red:#D94040;--amber:#C88B00;--purple:#7C5CD3;
+  --text:#1A1D2E;--text2:#4A5278;--text3:#8A94B8;
+  --card:#FFFFFF;--card2:#F7F9FD;
+  --shadow:0 1px 4px rgba(30,40,100,.06),0 4px 16px rgba(30,40,100,.04);
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'PingFang TC','Noto Sans TC','Microsoft JhengHei',system-ui,sans-serif;font-size:15px;-webkit-text-size-adjust:100%}
+body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+.app{max-width:480px;margin:0 auto;padding:0 12px calc(180px + env(safe-area-inset-bottom));min-height:100vh}
+
+/* ── 頂列 ── */
+.tophdr{padding:14px 4px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:17px;box-shadow:0 3px 8px rgba(232,131,42,.3)}
+.brand-text{font-weight:900;font-size:16px;color:var(--text);line-height:1.2}
+.brand-sub{font-size:10px;color:var(--text3);letter-spacing:.1em;margin-top:1px}
+.tag-store{background:var(--card);border:1.5px solid var(--accent);color:var(--accent);padding:6px 12px;border-radius:20px;font-weight:800;font-size:13px}
+
+/* ── 統計小卡 ── */
+.stat-bar{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center;box-shadow:var(--shadow)}
+.stat-val{font-size:22px;font-weight:900;line-height:1}
+.stat-lab{font-size:10px;color:var(--text3);margin-top:4px;letter-spacing:.04em}
+
+/* ── 夥伴卡 ── */
+.partner-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;box-shadow:var(--shadow);cursor:pointer;transition:transform .12s,box-shadow .12s}
+.partner-card:active{transform:scale(.98);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.partner-row{display:flex;align-items:center;gap:12px}
+.avatar{width:42px;height:42px;border-radius:50%;background:var(--bg3);display:flex;align-items:center;justify-content:center;font-weight:800;color:var(--text2);font-size:16px;flex-shrink:0}
+.partner-name{font-weight:800;font-size:16px;color:var(--text);line-height:1.2}
+.partner-meta{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:.04em}
+.role-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-weight:800;margin-left:6px;letter-spacing:.04em}
+.role-sm{background:rgba(217,64,64,.1);color:var(--red)}
+.role-reserve{background:rgba(139,90,43,.1);color:#8B5A2B}
+.role-ft{background:rgba(46,111,216,.1);color:var(--blue)}
+.role-pt{background:rgba(22,167,106,.1);color:var(--green)}
+.progress-bar{height:7px;background:var(--bg4);border-radius:4px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;border-radius:4px;transition:width .3s}
+.progress-meta{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-top:5px;letter-spacing:.04em}
+.skill-summary{display:flex;gap:5px;margin-top:8px}
+.skill-dot{flex:1;height:6px;border-radius:3px;background:var(--bg4)}
+/* 顏色改由 LEVELS[level].color 動態 inline style 決定，不再用固定 class（5 級顏色見 LEVELS 定義） */
+
+/* ── 評核 modal ── */
+.modal-back{position:fixed;inset:0;background:rgba(20,24,40,.6);backdrop-filter:blur(6px);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.modal-back.show{opacity:1;pointer-events:auto}
+.modal-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:18px 18px 0 0;z-index:51;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);max-height:92vh;display:flex;flex-direction:column}
+.modal-sheet.show{transform:translateY(0)}
+.mhdr{padding:14px 16px;border-bottom:1px solid var(--border);background:var(--card);border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.mhdr-handle{width:38px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 6px;cursor:pointer}
+.mhdr-info{flex:1;min-width:0}
+.mhdr-name{font-weight:900;font-size:17px;color:var(--text);line-height:1.2}
+.mhdr-meta{font-size:11px;color:var(--text3);margin-top:3px;letter-spacing:.04em}
+.mhdr-close{background:var(--bg3);border:none;width:34px;height:34px;border-radius:50%;font-size:18px;color:var(--text2);cursor:pointer;flex-shrink:0}
+.mbody{flex:1;overflow-y:auto;padding:12px 14px calc(110px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.mfooter{padding:12px 14px;background:var(--card);border-top:1px solid var(--border);box-shadow:0 -2px 8px rgba(0,0,0,.04);position:sticky;bottom:0;display:flex;gap:8px}
+
+/* ── 技能分組 ── */
+.group-card{background:var(--card);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.group-hdr{padding:11px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border)}
+.group-lab{font-weight:800;font-size:13px;letter-spacing:.04em}
+.group-count{font-size:11px;color:var(--text3);font-weight:600}
+.group-quick{display:flex;flex-wrap:wrap;gap:5px;padding:9px 14px;background:var(--card2);border-bottom:1px solid var(--border)}
+.qbtn{flex:1 1 auto;min-width:84px;padding:6px 4px;border:1px solid var(--border2);background:#fff;color:var(--text2);font-size:11px;font-weight:700;border-radius:6px;cursor:pointer;letter-spacing:.01em;white-space:nowrap}
+.qbtn:active{transform:scale(.96)}
+/* 5 級的顏色改由 LEVELS[level].color 動態 inline style 決定，不再用固定 class */
+.qbtn.clr{border-color:var(--text3);color:var(--text3)}
+.skill-row{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:8px}
+.skill-row:last-child{border-bottom:none}
+.skill-row-top{display:flex;align-items:center;gap:10px}
+.skill-icon{font-size:22px;width:30px;text-align:center;flex-shrink:0}
+.skill-lab-wrap{flex:1;min-width:0}
+.skill-lab{font-weight:800;font-size:14px;color:var(--text)}
+.skill-key{font-size:10px;color:var(--text3);margin-top:2px;letter-spacing:.05em}
+.lvl-group{display:flex;gap:4px}
+.lvl-btn{flex:1;padding:8px 2px;border:1.5px solid var(--border2);background:#fff;color:var(--text2);font-size:11px;font-weight:800;border-radius:7px;cursor:pointer;text-align:center;transition:all .12s;white-space:nowrap}
+.lvl-btn:active{transform:scale(.94)}
+/* .on 狀態的背景/邊框/陰影改由 LEVELS[level].color 動態 inline style 決定，不再用固定 class */
+
+/* ── 主要按鈕 ── */
+.btn{padding:13px 16px;border-radius:11px;font-size:14px;font-weight:800;border:none;cursor:pointer;letter-spacing:.06em;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 3px 12px rgba(232,131,42,.35);flex:1}
+.btn-primary:active{transform:scale(.97);background:var(--accent2)}
+.btn-secondary{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);flex:1}
+.btn-secondary:active{transform:scale(.97)}
+.btn-ghost{background:transparent;color:var(--text3);border:1px solid var(--border2);padding:9px 14px;font-size:12px;font-weight:700;border-radius:8px;cursor:pointer}
+
+/* ── 鎖定畫面 ── */
+.lock-wrap{display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:calc(100vh - 60px);padding:20px}
+.lock-card{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:30px 22px;width:100%;max-width:380px;box-shadow:0 8px 30px rgba(30,40,100,.08)}
+.lock-icon{font-size:48px;text-align:center;margin-bottom:6px}
+.lock-title{font-weight:900;font-size:22px;text-align:center;color:var(--text);margin-bottom:6px}
+.lock-sub{font-size:13px;color:var(--text3);text-align:center;margin-bottom:22px;letter-spacing:.04em}
+.store-select{width:100%;padding:14px 16px;border:1.5px solid var(--border2);border-radius:11px;font-size:16px;font-weight:700;background:var(--bg3);outline:none;color:var(--text);margin-bottom:10px}
+.store-select:focus{border-color:var(--accent);background:#fff}
+.input-text{width:100%;padding:14px 16px;border:1.5px solid var(--border2);border-radius:11px;font-size:16px;font-weight:600;background:var(--bg3);outline:none;color:var(--text);margin-bottom:10px}
+.input-text:focus{border-color:var(--accent);background:#fff}
+
+/* ── 底部 sticky 送出區 ── */
+.bottom-bar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.94);backdrop-filter:blur(10px);border-top:1px solid var(--border);padding:10px 12px calc(10px + env(safe-area-inset-bottom));z-index:30;display:flex;gap:8px;max-width:480px;margin:0 auto}
+
+/* ── 同步碼面板 ── */
+.sync-panel{background:#fff;border:1px solid var(--border);border-radius:14px;padding:16px;margin:14px 0;box-shadow:var(--shadow)}
+.sync-title{font-weight:900;font-size:15px;color:var(--text);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+.sync-text{width:100%;padding:10px;border:1px solid var(--border2);background:var(--bg3);border-radius:8px;font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--text2);min-height:90px;word-break:break-all;line-height:1.5;outline:none;resize:vertical}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(20,24,40,.95);color:#fff;padding:12px 22px;border-radius:24px;font-size:13px;font-weight:700;z-index:100;opacity:0;transition:opacity .25s,bottom .25s;letter-spacing:.06em;pointer-events:none}
+.toast.show{opacity:1;bottom:100px}
+.toast.error{background:rgba(217,64,64,.95)}
+.toast.success{background:rgba(22,167,106,.95)}
+
+/* ── 等級色彩 (整體) ── */
+.lv-1{color:#8A94B8}.lv-2{color:#16A76A}.lv-3{color:#2E6FD8}.lv-4{color:#7C5CD3}.lv-5{color:#E8832A}.lv-max{color:#D94040}
+
+/* ── 同步狀態 ── */
+.sync-indicator{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:14px;font-size:11px;font-weight:700;letter-spacing:.04em;color:#fff !important;background:var(--green);white-space:nowrap}
+.sync-on{background:var(--green);color:#fff}
+.sync-off{background:rgba(138,148,184,.15);color:var(--text3)}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="assets/config.js"></script>
+
+<script>
+// ════════════════════════════════════════════════════════════════════════
+// 1. 同步雲端設定（進階）
+//    若你要全自動雲端同步：
+//    a) 在 Google 帳號開一個 Apps Script Web App，貼最底下附的程式碼
+//    b) 部署 → 任何人皆可存取 → 複製 URL → 填到下方 SYNC_URL
+//    c) 不設定也沒關係，預設用瀏覽器本地存檔 + 同步碼即可
+// ════════════════════════════════════════════════════════════════════════
+// 預設使用「當前網址」自動同步(因為頁面就是 Apps Script 服務的)
+// 若空字串,會 fallback 用 location.href
+const SYNC_URL = window.location.href.split('?')[0];
+
+// ── 技能架構與名冊改由共用 config.js 提供（單一來源，避免兩邊各自維護） ──
+const H = window.CHIYUAN, SK = H.SKILLS;
+const SKILL_GROUPS=SK.GROUPS, SKILL_LABELS=SK.LABELS, SKILL_ICONS=SK.ICONS,
+      ONBOARD_TO_SKILL=SK.ONBOARD_TO_SKILL, ONBOARD_LEVEL_TO_SM=SK.ONBOARD_LEVEL_TO_SM,
+      EVALUABLE_STORES=SK.EVALUABLE_STORES, EMPLOYEES=SK.EMPLOYEES,
+      LEVELS=SK.LEVELS, LEVEL_ORDER=SK.LEVEL_ORDER, ALL_SKILL_KEYS=SK.ALL_KEYS,
+      STORE_CODES=SK.STORE_CODES, SUPERVISOR_CODE=SK.SUPERVISOR_CODE;
+
+// ════════════════════════════════════════════════════════════════════════
+// 2. 技能架構（與戰情室共用，共 27 項）
+// ════════════════════════════════════════════════════════════════════════
+
+// 新人考核項目 → SM 技能 的對應（一對多就同時帶入）
+// 左邊是新人考核的 key，右邊是 SM 技能的 key（可多個）
+
+// 新人考核 5 級（0~4）→ SM 五級 key
+
+// 從新人考核結果，算出可預填的 SM 技能（值為純字串，與 state.evals 格式一致）
+function prefillFromOnboard(onboardEval){
+  const pre = {};   // { 技能key: 'normal' }
+  if(!onboardEval || !onboardEval.levels) return pre;
+  Object.keys(ONBOARD_TO_SKILL).forEach(function(okey){
+    const lv = onboardEval.levels[okey];
+    if(lv == null) return;
+    const smLevel = ONBOARD_LEVEL_TO_SM[lv];
+    ONBOARD_TO_SKILL[okey].forEach(function(skill){ pre[skill] = smLevel; });
+  });
+  return pre;
+}
+
+// 記錄哪些格子是「新人考核帶入、店經理尚未確認」的
+let prefillMark = {};   // { 工號: { 技能key:true } }
+
+// 對某位員工套用帶入：只補 SM 還沒評過的技能，不覆蓋既有評分
+// opts.verbose=true 時會跳 toast 提示結果（給手動按鈕用）；預設(靜默)給 openEval 自動呼叫用，失敗不出聲
+function applyOnboardPrefill(empId, opts){
+  opts = opts || {};
+  return _gscriptRun('getOnboardEval', empId).then(function(oe){
+    if(!oe){
+      if(opts.verbose) showToast('這位夥伴沒有新人考核資料可拉','error');
+      return;
+    }
+    if(!state.evals[empId]) state.evals[empId] = {};
+    if(!prefillMark[empId]) prefillMark[empId] = {};
+    // 規則：空格→補；已有值且衝突時，比較「新人考核日 vs 該人技能評核最後更新日」，較新的為主
+    const smUpdated = (state.evalMeta && state.evalMeta[empId]) || null;
+    const res = H.DataAPI.mergeOnboardIntoSkills(state.evals[empId], oe, smUpdated);
+    state.evals[empId] = res.evals;
+    Object.keys(res.marks).forEach(function(sk){ prefillMark[empId][sk] = true; });
+    const changed = res.filled + res.overwritten;
+    if(changed){ saveState(); const p = EMPLOYEES.find(e=>e.id===empId); renderModal(p); }
+    if(opts.verbose){
+      if(changed) showToast('✅ 已帶入 '+changed+' 項新人考核評分'+(res.overwritten?'（更新較舊的 '+res.overwritten+' 項）':''),'success');
+      else showToast('沒有可帶入的新項目(可能都已評過)','success');
+    }
+  }).catch(function(err){
+    if(opts.verbose) showToast('❌ 拉取新人考核失敗：'+(err&&err.message||'未知錯誤'),'error');
+  });
+}
+
+
+// ════════════════════════════════════════════════════════════════════════
+// 3. 門市/夥伴清單 (對齊戰情室 v5_11)
+// ════════════════════════════════════════════════════════════════════════
+
+// === 員工名單 (同步雲端大表 2026/6/17) ===
+// 規則:
+//  - 已離職不列入
+//  - 病假/留停: 仍列但 store 加註"病假"前綴,該店 SM 不會看到
+//  - 無工號之新人暫不列入(等發 ID 後加)
+
+// ════════════════════════════════════════════════════════════════════════
+// 4. 狀態管理
+// ════════════════════════════════════════════════════════════════════════
+// 由低到高的顯示順序，所有動態產生等級按鈕/統計都依此順序
+// hex 色碼轉 rgba 字串（給 active 狀態的 box-shadow 用）
+function hexA(hex, a){
+  const h = String(hex).replace('#','');
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem('skill_eval_v2');
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return null;
+}
+
+function saveState(){
+  try{
+    state.updated = new Date().toISOString();
+    localStorage.setItem('skill_eval_v2', JSON.stringify(state));
+  }catch(e){
+    showToast('儲存失敗，請檢查瀏覽器空間', 'error');
+  }
+}
+
+// 解析 URL：?store=師大店&mgr=林律綺
+function parseUrlStore(){
+  try{
+    const sp = new URLSearchParams(location.search);
+    return {store: sp.get('store')||'', mgr: sp.get('mgr')||''};
+  }catch(e){return {store:'',mgr:''}}
+}
+
+// ── 區督導通行碼 ──
+
+// ── 各店進場密碼 ──
+
+let state = loadState() || {
+  role: '',     // 'store_manager' = 店經理評核員工 / 'supervisor' = 區督導評核店經理
+  store: '',
+  manager: '',
+  evals: {},    // { empId: { skill: 'rusty'/'basic'/'normal'/'skilled'/'expert' } }（5 級，見 LEVELS）
+  shifts: {},   // { empId: { morning:true, mid:false, night:true } }
+  authed: false,// 是否已通過該店通行碼
+  updated: null
+};
+// 兼容舊狀態:缺 shifts 欄位補上
+if(!state.shifts) state.shifts = {};
+// 每位夥伴「技能評核最後更新時間」— 用來和新人考核日期比較，決定衝突時誰為主
+if(!state.evalMeta){
+  state.evalMeta = {};
+  // 舊資料沒有逐人時間 → 以整份 state.updated 當基準日
+  Object.keys(state.evals||{}).forEach(function(id){ state.evalMeta[id] = state.updated || new Date().toISOString(); });
+}
+function touchEmp(empId){ if(!state.evalMeta) state.evalMeta={}; state.evalMeta[empId] = new Date().toISOString(); }
+// 暫存 store-pw 模式下待解鎖的店
+let _pendingStore = '';
+// 兼容舊狀態:沒有 role 但有 store → 視為店經理模式
+if(!state.role && state.store){
+  state.role = 'store_manager';
+}
+
+// 若 URL 帶 store，且本地沒有設定，就帶入
+const _urlInit = parseUrlStore();
+if(_urlInit.store && !state.store){
+  state.store = _urlInit.store;
+  if(!state.role) state.role = 'store_manager';
+}
+if(_urlInit.mgr && !state.manager){
+  state.manager = _urlInit.mgr;
+}
+
+let openEmpId = null;
+
+// ════════════════════════════════════════════════════════════════════════
+// 5. 工具函式
+// ════════════════════════════════════════════════════════════════════════
+function getRoleClass(role){
+  if(/^店經理$/.test(role)) return 'role-sm';
+  if(/儲備/.test(role)) return 'role-reserve';
+  if(/正職/.test(role)) return 'role-ft';
+  return 'role-pt';
+}
+function shortRole(role){
+  if(/^店經理$/.test(role)) return '店經理';
+  if(/儲備/.test(role)) return '儲備';
+  if(/正職/.test(role)) return '正職';
+  return '兼職';
+}
+function partnerScore(empId){
+  const e = state.evals[empId] || {};
+  let total = 0;
+  ALL_SKILL_KEYS.forEach(sk=>{
+    const v = e[sk]; if(v && LEVELS[v]) total += LEVELS[v].weight;
+  });
+  return total; // 0~24
+}
+function partnerCounts(empId){
+  const e = state.evals[empId] || {};
+  let exp=0,ski=0,nor=0,bas=0,rus=0,non=0;
+  ALL_SKILL_KEYS.forEach(sk=>{
+    const v = e[sk];
+    if(v==='expert') exp++;
+    else if(v==='skilled') ski++;
+    else if(v==='normal') nor++;
+    else if(v==='basic') bas++;
+    else if(v==='rusty') rus++;
+    else non++;
+  });
+  return {exp,ski,nor,bas,rus,non,done: exp+ski+nor+bas+rus};
+}
+const SKILL_TOTAL = ALL_SKILL_KEYS.length;   // 技能總數（單一來源，目前 28）
+function partnerPct(empId){
+  return Math.round(partnerScore(empId)/SKILL_TOTAL*100);
+}
+function getLevel(score){
+  const r = score/SKILL_TOTAL;             // 依比例分級，與技能總數無關
+  if(r>=0.96) return {code:'MAX',cls:'lv-max'};
+  if(r>=0.75) return {code:'Lv.5',cls:'lv-5'};
+  if(r>=0.58) return {code:'Lv.4',cls:'lv-4'};
+  if(r>=0.375)return {code:'Lv.3',cls:'lv-3'};
+  if(r>=0.16) return {code:'Lv.2',cls:'lv-2'};
+  return {code:'Lv.1',cls:'lv-1'};
+}
+function partnerColor(pct){
+  if(pct>=80) return '#16A76A';
+  if(pct>=50) return '#2E6FD8';
+  if(pct>=25) return '#C88B00';
+  return '#D94040';
+}
+function fmtTime(iso){
+  if(!iso) return '尚未送出';
+  try{
+    const d = new Date(iso);
+    return d.toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
+  }catch(e){return iso}
+}
+
+// ════════════════════════════════════════════════════════════════════════
+// 6. 畫面渲染
+// ════════════════════════════════════════════════════════════════════════
+function render(){
+  // 未選身份 → 選擇身份頁
+  if(!state.role || (state.role==='store_manager' && !state.store)){
+    renderLock();
+    return;
+  }
+  // 已選身份但未通過通行碼驗證 → 要求重新輸入密碼
+  if(!state.authed){
+    if(state.role==='store_manager'){
+      _pendingStore = state.store;
+      _lockMode = 'store-pw';
+    }else{
+      _lockMode = 'supervisor';
+    }
+    renderLock();
+    return;
+  }
+  renderMain();
+}
+
+// 鎖定畫面狀態: 'choose'(選角色) / 'manager'(店經理選店) / 'supervisor'(區督導輸密碼)
+let _lockMode = 'choose';
+
+function renderLock(){
+  const root = document.getElementById('root');
+  if(_lockMode==='manager'){
+    root.innerHTML = `
+      <div class="lock-wrap">
+        <div class="lock-card">
+          <div class="lock-icon">🏪</div>
+          <div class="lock-title">店經理入口</div>
+          <div class="lock-sub">請點選你的門市</div>
+          <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:8px 0 14px">
+            ${EVALUABLE_STORES.map(s=>`<button class="store-tile" data-store="${s}" onclick="pickStore('${s}')" style="padding:18px 10px;border:2px solid var(--border2);background:#fff;color:var(--text);border-radius:12px;font-size:15px;font-weight:800;cursor:pointer;transition:all .15s">${s}</button>`).join('')}
+          </div>
+          <button class="btn-ghost" style="display:block;margin:6px auto 0" onclick="backToChoose()">← 返回</button>
+        </div>
+      </div>
+    `;
+    return;
+  }
+  if(_lockMode==='store-pw'){
+    root.innerHTML = `
+      <div class="lock-wrap">
+        <div class="lock-card">
+          <div class="lock-icon">🔐</div>
+          <div class="lock-title">${_pendingStore||'門市'}</div>
+          <div class="lock-sub">請輸入該店通行碼</div>
+          <input id="store-pw-input" type="password" class="input-text" placeholder="通行碼" autocomplete="off" autocapitalize="off" maxlength="20"/>
+          <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="doStorePw()">進入評核</button>
+          <button class="btn-ghost" style="display:block;margin:14px auto 0" onclick="_lockMode='manager';_pendingStore='';renderLock()">← 換一間</button>
+        </div>
+      </div>
+    `;
+    setTimeout(function(){
+      var ip=document.getElementById('store-pw-input');
+      if(ip){ip.focus();ip.addEventListener('keydown',function(e){if(e.key==='Enter')doStorePw();});}
+    },50);
+    return;
+  }
+  if(_lockMode==='supervisor'){
+    root.innerHTML = `
+      <div class="lock-wrap">
+        <div class="lock-card">
+          <div class="lock-icon">🎯</div>
+          <div class="lock-title">區督導入口</div>
+          <div class="lock-sub">請輸入區督導通行碼</div>
+          <input id="lock-code" type="password" class="input-text" placeholder="通行碼" autocomplete="off"/>
+          <button class="btn btn-primary" style="width:100%;margin-top:6px" onclick="doLockSupervisor()">進入評核</button>
+          <button class="btn-ghost" style="display:block;margin:14px auto 0" onclick="backToChoose()">← 返回</button>
+        </div>
+      </div>
+    `;
+    setTimeout(function(){
+      var ip=document.getElementById('lock-code');
+      if(ip){ip.focus();ip.addEventListener('keydown',function(e){if(e.key==='Enter')doLockSupervisor();});}
+    },50);
+    return;
+  }
+  // 初始: 選擇身份
+  root.innerHTML = `
+    <div class="lock-wrap">
+      <div class="lock-card">
+        <div class="lock-icon">🍵</div>
+        <div class="lock-title">季緣 SM 技能評核</div>
+        <div class="lock-sub">v2 · 行動版主管評核工具</div>
+        <button class="btn btn-primary" style="width:100%;margin-top:14px;padding:18px 16px" onclick="_lockMode='manager';renderLock()">
+          🏪 店經理入口
+        </button>
+        <button class="btn btn-secondary" style="width:100%;margin-top:10px;padding:18px 16px" onclick="_lockMode='supervisor';renderLock()">
+          🎯 區督導入口
+        </button>
+        <div style="margin-top:18px;padding:11px;background:var(--bg3);border-radius:9px;font-size:12px;color:var(--text2);line-height:1.6">
+          <div style="font-weight:800;margin-bottom:4px;color:var(--text)">📌 使用提醒</div>
+          • 每個技能可選 <b style="color:${LEVELS.rusty.color}">未接觸</b> / <b style="color:${LEVELS.basic.color}">需協助</b> / <b style="color:${LEVELS.normal.color}">可獨立</b> / <b style="color:${LEVELS.skilled.color}">熟練</b> / <b style="color:${LEVELS.expert.color}">精熟</b> 五級<br>
+          • 按「送出評核」後會自動同步到雲端<br>
+          • 重新開啟此連結,會自動載入上次的評核
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// 店經理點選門市 → 進入通行碼閘
+function pickStore(s){
+  _pendingStore = s;
+  _lockMode = 'store-pw';
+  renderLock();
+}
+
+// 驗證該店通行碼
+function doStorePw(){
+  const ip = document.getElementById('store-pw-input');
+  const code = ip ? ip.value.trim() : '';
+  const expect = STORE_CODES[_pendingStore];
+  if(!expect){ showToast('找不到該店設定','error'); return; }
+  if(code !== expect){
+    showToast('通行碼錯誤','error');
+    if(ip){ ip.value=''; ip.focus(); }
+    return;
+  }
+  // 通過 → 設定狀態並進入
+  state.role = 'store_manager';
+  state.store = _pendingStore;
+  state.manager = '';
+  state.authed = true;
+  saveState();
+  _pendingStore = '';
+  _lockMode = 'choose';
+  render();
+  if(SYNC_URL) loadFromCloud();
+}
+
+function backToChoose(){
+  _lockMode='choose';
+  renderLock();
+}
+
+function doLockManager(){
+  const sel = document.getElementById('lock-store').value;
+  const mgr = document.getElementById('lock-mgr').value.trim();
+  if(!sel){showToast('請選擇門市','error');return;}
+  state.role = 'store_manager';
+  state.store = sel;
+  state.manager = mgr;
+  saveState();
+  _lockMode='choose';
+  render();
+}
+
+function doLockSupervisor(){
+  const code = document.getElementById('lock-code').value.trim();
+  if(code !== SUPERVISOR_CODE){showToast('通行碼錯誤','error');return;}
+  state.role = 'supervisor';
+  state.store = '';
+  state.manager = '';
+  state.authed = true;
+  saveState();
+  _lockMode='choose';
+  render();
+  if(SYNC_URL) loadFromCloud();
+}
+
+// 保留舊版 doLock 以防誤呼叫
+function doLock(){doLockManager();}
+
+function renderMain(){
+  const root = document.getElementById('root');
+  let partners;
+  if(state.role==='supervisor'){
+    // 區督導模式: 只看店經理(跨店)
+    partners = EMPLOYEES.filter(e=>/^店經理$/.test(e.role||''));
+  }else{
+    // 店經理模式: 看自己店的員工,但排除店經理本身(自己不評自己)
+    partners = EMPLOYEES.filter(e=>e.store===state.store && !/^店經理$/.test(e.role||''));
+  }
+  // 依角色排序
+  const rolePri = e=>{
+    const r=e.role||'';
+    if(/^店經理$/.test(r)) return 0;
+    if(/儲備/.test(r)) return 1;
+    if(/正職/.test(r)) return 2;
+    return 3;
+  };
+  partners.sort((a,b)=>{
+    const d = rolePri(a)-rolePri(b);
+    if(d!==0) return d;
+    return (a.id||'').localeCompare(b.id||'');
+  });
+
+  const totalDone = partners.reduce((s,p)=>s + (partnerCounts(p.id).done>0?1:0), 0);
+  const avgScore = partners.length>0 ? partners.reduce((s,p)=>s+partnerScore(p.id),0)/partners.length : 0;
+  const avgPct = Math.round(avgScore/SKILL_TOTAL*100);
+
+  // 算每個分類覆蓋率
+  const groupAvg = {};
+  Object.keys(SKILL_GROUPS).forEach(gk=>{
+    const g = SKILL_GROUPS[gk];
+    let total=0, n=0;
+    partners.forEach(p=>{
+      g.skills.forEach(sk=>{
+        const v = (state.evals[p.id]||{})[sk];
+        if(v && LEVELS[v]){total += LEVELS[v].weight; n++;}
+      });
+    });
+    const pos = partners.length*g.skills.length;
+    groupAvg[gk] = pos>0?Math.round(total/pos*100):0;
+  });
+
+  const isSup = state.role==='supervisor';
+  const headerTag = isSup
+    ? `<div class="tag-store" style="background:var(--purple);color:#fff;border-color:var(--purple)" onclick="changeStore()">區督導模式 ⇄</div>`
+    : `<div class="tag-store" onclick="changeStore()">${state.store} ⇄</div>`;
+  let html = `
+    <div class="tophdr">
+      <div class="brand">
+        <div class="brand-icon">${isSup?'🎯':'SM'}</div>
+        <div>
+          <div class="brand-text">${isSup?'店經理評核':'員工技能評核'}</div>
+          <div class="brand-sub">${state.manager?state.manager+' · ':''}${fmtTime(state.updated)}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center">
+        <button onclick="manualReloadFromCloud(this)" title="從雲端拉最新評核(包含戰情室修改)" style="padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;line-height:1">🔄</button>
+        ${headerTag}
+      </div>
+    </div>
+
+    <div class="stat-bar">
+      <div class="stat-card"><div class="stat-val" style="color:${partnerColor(avgPct)}">${avgPct}%</div><div class="stat-lab">整店覆蓋</div></div>
+      <div class="stat-card"><div class="stat-val">${totalDone}/${partners.length}</div><div class="stat-lab">已評夥伴</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:${LEVELS.expert.color}">${Object.values(state.evals).reduce((s,e)=>s+Object.values(e).filter(v=>v==='expert').length,0)}</div><div class="stat-lab">精熟數</div></div>
+      <div class="stat-card"><div class="stat-val" style="color:${LEVELS.rusty.color}">${Object.values(state.evals).reduce((s,e)=>s+Object.values(e).filter(v=>v==='rusty').length,0)}</div><div class="stat-lab">未接觸</div></div>
+    </div>
+
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px 14px;margin-bottom:14px;box-shadow:var(--shadow)">
+      <div style="font-size:11px;font-weight:800;color:var(--text3);letter-spacing:.1em;margin-bottom:7px">五大類覆蓋率（即時）</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px">
+        ${Object.keys(SKILL_GROUPS).map(gk=>{
+          const g=SKILL_GROUPS[gk];
+          const p=groupAvg[gk];
+          return `<div style="background:${g.bg};border:1px solid ${g.border};border-radius:8px;padding:7px 4px;text-align:center">
+            <div style="font-size:10px;font-weight:800;color:${g.color}">${g.short}</div>
+            <div style="font-size:18px;font-weight:900;color:${g.color};margin-top:2px">${p}%</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+
+  html += partners.map(p => renderPartnerCard(p)).join('');
+
+  if(partners.length===0){
+    html += `<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:32px;text-align:center;color:var(--text3)">
+      此門市目前沒有夥伴資料，請聯絡總部更新
+    </div>`;
+  }
+
+  // 底部 spacer — 保證最後一張卡的 skill dots 不會被固定 bottom-bar 擋住
+  // 這個 div 高度蓋過所有可能的 bottom-bar + safe-area + iOS URL bar 隱現的尺寸
+  html += `<div style="height:calc(160px + env(safe-area-inset-bottom));pointer-events:none" aria-hidden="true"></div>`;
+
+  html += `
+    <div class="bottom-bar">
+      <button class="btn btn-secondary" onclick="logoutAndHome()">🚪 登出</button>
+      <button class="btn btn-primary" onclick="submitEval()">📤 送出評核 (${totalDone}/${partners.length})</button>
+    </div>
+
+    <!-- Modal -->
+    <div id="modal-back" class="modal-back" onclick="closeModal()"></div>
+    <div id="modal-sheet" class="modal-sheet">
+      <div class="mhdr">
+        <div style="position:absolute;top:6px;left:50%;transform:translateX(-50%);width:38px;height:4px;background:var(--border2);border-radius:2px;"></div>
+        <div class="mhdr-info" id="mhdr-info"></div>
+        <button class="mhdr-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="mbody" id="mbody"></div>
+      <div class="mfooter">
+        <button class="btn btn-secondary" onclick="closeModal()">完成</button>
+        <button class="btn btn-primary" onclick="markAllNormal()">全部標為「${LEVELS.normal.label}」</button>
+      </div>
+    </div>
+
+    <div id="toast" class="toast"></div>
+  `;
+
+  root.innerHTML = html;
+}
+
+function renderPartnerCard(p){
+  const c = partnerCounts(p.id);
+  const score = partnerScore(p.id);
+  const pct = Math.round(score/SKILL_TOTAL*100);
+  const lv = getLevel(score);
+  const avatar = p.name ? p.name[p.name.length-1] : '?';
+  // 各技能小格子（依等級分色）
+  let dots = '';
+  ALL_SKILL_KEYS.forEach(sk=>{
+    const v = (state.evals[p.id]||{})[sk];
+    const bg = (v && LEVELS[v]) ? `background:${LEVELS[v].color}` : '';
+    dots += `<div class="skill-dot" style="${bg}"></div>`;
+  });
+  return `
+    <div class="partner-card" onclick="openEval('${p.id}')">
+      <div class="partner-row">
+        <div class="avatar">${avatar}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;flex-wrap:wrap;gap:4px">
+            <span class="partner-name">${p.name}</span>
+            <span class="role-pill ${getRoleClass(p.role)}">${shortRole(p.role)}</span>
+          </div>
+          <div class="partner-meta">${p.id||'—'} · 已評 ${c.done}/${SKILL_TOTAL} ${c.done===0?'<span style="color:var(--red);font-weight:800">　待開始</span>':''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div class="${lv.cls}" style="font-weight:900;font-size:16px;line-height:1">${lv.code}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px">${pct}%</div>
+        </div>
+      </div>
+      <div class="skill-summary">${dots}</div>
+    </div>
+  `;
+}
+
+// ── Modal ──
+function openEval(empId){
+  openEmpId = empId;
+  const p = EMPLOYEES.find(e=>e.id===empId);
+  if(!p) return;
+  if(!state.evals[empId]) state.evals[empId] = {};
+
+  // 防止 body 滾動
+  document.body.style.overflow='hidden';
+  renderModal(p);
+  applyOnboardPrefill(empId);   // ← 新增這行
+
+  setTimeout(()=>{
+    document.getElementById('modal-back').classList.add('show');
+    document.getElementById('modal-sheet').classList.add('show');
+  }, 10);
+}
+
+function renderModal(p){
+  const c = partnerCounts(p.id);
+  const score = partnerScore(p.id);
+  const pct = Math.round(score/SKILL_TOTAL*100);
+  const lv = getLevel(score);
+
+  document.getElementById('mhdr-info').innerHTML = `
+    <div class="mhdr-name">${p.name} <span class="role-pill ${getRoleClass(p.role)}" style="margin-left:4px;font-size:10px;padding:1px 7px">${shortRole(p.role)}</span></div>
+    <div class="mhdr-meta">${p.id||'—'} · ${state.store} · <span class="${lv.cls}" style="font-weight:800">${lv.code}</span> · ${score.toFixed(1)}/${SKILL_TOTAL} (${pct}%)</div>
+  `;
+
+  // ── 班別偏好 (早/中/晚 可複選) ──
+  if(!state.shifts[p.id]) state.shifts[p.id] = {};
+  const sh = state.shifts[p.id];
+  const shiftConf=[
+    {k:'morning',l:'早班',i:'☀️',c:'#C88B00',bg:'#FFF8E6',br:'rgba(200,139,0,.4)'},
+    {k:'mid',    l:'中班',i:'⛅', c:'#2E6FD8',bg:'rgba(46,111,216,.08)',br:'rgba(46,111,216,.4)'},
+    {k:'night',  l:'晚班',i:'🌙',c:'#7C5CD3',bg:'rgba(124,92,211,.1)',br:'rgba(124,92,211,.4)'}
+  ];
+  const shCount = shiftConf.filter(s=>sh[s.k]).length;
+  let body = `
+    <button onclick="applyOnboardPrefill('${p.id}',{verbose:true})" style="cursor:pointer;width:100%;margin-bottom:12px;padding:11px 14px;border-radius:11px;border:1.5px dashed #BE7E33;background:#F6ECDC;color:#8A5A1E;font-size:13px;font-weight:800;letter-spacing:.02em;display:flex;align-items:center;justify-content:center;gap:6px">
+      📥 拉這位夥伴的新人考核評分(只補空缺,不覆蓋已評)
+    </button>
+    <div class="group-card" style="border-color:rgba(138,148,184,.3);margin-bottom:14px">
+      <div class="group-hdr" style="background:rgba(138,148,184,.06)">
+        <div class="group-lab" style="color:#4a5273">🗓️ 班別偏好 <span style="font-weight:600;color:var(--text3);font-size:11px">早/中/晚 可複選</span></div>
+        <div class="group-count">${shCount}/3</div>
+      </div>
+      <div style="display:flex;gap:8px;padding:12px;flex-wrap:wrap">
+        ${shiftConf.map(s=>{
+          const on=!!sh[s.k];
+          const onStyle=`background:${s.c};border:1.5px solid ${s.c};color:#fff;box-shadow:0 2px 6px ${s.c}40;`;
+          const offStyle=`background:#fff;border:1.5px solid ${s.br};color:${s.c};`;
+          return `<button onclick="toggleShift('${s.k}')" style="cursor:pointer;flex:1;min-width:90px;padding:11px 14px;border-radius:20px;font-size:13px;font-weight:800;letter-spacing:.04em;transition:all .15s;${on?onStyle:offStyle}">
+            <span style="font-size:14px;margin-right:4px">${s.i}</span>${s.l}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+  Object.keys(SKILL_GROUPS).forEach(gk=>{
+    const g = SKILL_GROUPS[gk];
+    const gDone = g.skills.filter(sk=>!!state.evals[p.id][sk]).length;
+    body += `
+      <div class="group-card" style="border-color:${g.border}">
+        <div class="group-hdr" style="background:${g.bg}">
+          <div class="group-lab" style="color:${g.color}">${g.label} <span style="font-weight:600;color:var(--text3)">${g.short}</span></div>
+          <div class="group-count">${gDone}/${g.skills.length}</div>
+        </div>
+        <div class="group-quick">
+          ${LEVEL_ORDER.map(lk=>`<button class="qbtn" style="border-color:${LEVELS[lk].color};color:${LEVELS[lk].color}" onclick="quickSet('${gk}','${lk}')">本類全${LEVELS[lk].label}</button>`).join('')}
+          <button class="qbtn clr" onclick="quickSet('${gk}','')">清除</button>
+        </div>
+        ${g.skills.map(sk=>{
+          const v = state.evals[p.id][sk] || '';
+          const isPre = prefillMark[p.id] && prefillMark[p.id][sk];
+          return `
+            <div class="skill-row">
+              <div class="skill-row-top">
+                <div class="skill-icon">${SKILL_ICONS[sk]}</div>
+                <div class="skill-lab-wrap">
+                  <div class="skill-lab">${SKILL_LABELS[sk]}${isPre?' <span style="font-size:10px;font-weight:800;color:#BE7E33;background:#F6ECDC;border-radius:5px;padding:1px 6px;margin-left:4px">新人考核</span>':''}</div>
+                  <div class="skill-key">${sk}</div>
+                </div>
+              </div>
+              <div class="lvl-group">
+                ${LEVEL_ORDER.map(lk=>{
+                  const on = v===lk;
+                  const onStyle = on ? `background:${LEVELS[lk].color};color:#fff;border-color:${LEVELS[lk].color};box-shadow:0 2px 6px ${hexA(LEVELS[lk].color,.3)}` : '';
+                  return `<button class="lvl-btn${on?' on':''}" style="${onStyle}" onclick="setLvl('${sk}','${lk}')">${LEVELS[lk].label}</button>`;
+                }).join('')}
+              </div>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    `;
+  });
+
+  document.getElementById('mbody').innerHTML = body;
+}
+
+function closeModal(){
+  document.getElementById('modal-back').classList.remove('show');
+  document.getElementById('modal-sheet').classList.remove('show');
+  document.body.style.overflow='';
+  setTimeout(()=>{
+    openEmpId=null;
+    render();
+  }, 250);
+}
+
+function toggleShift(shiftKey){
+  if(!openEmpId) return;
+  if(!state.shifts) state.shifts={};
+  if(!state.shifts[openEmpId]) state.shifts[openEmpId]={};
+  state.shifts[openEmpId][shiftKey] = !state.shifts[openEmpId][shiftKey];
+  saveState();
+  const p = EMPLOYEES.find(e=>e.id===openEmpId);
+  renderModal(p);
+}
+
+function setLvl(skill, lvl){
+  if(!openEmpId) return;
+  if(prefillMark[openEmpId]) delete prefillMark[openEmpId][skill];
+  if(!state.evals[openEmpId]) state.evals[openEmpId]={};
+  if(state.evals[openEmpId][skill]===lvl){
+    // 同樣按一次 = 取消
+    delete state.evals[openEmpId][skill];
+  }else{
+    state.evals[openEmpId][skill] = lvl;
+  }
+  touchEmp(openEmpId);
+  saveState();
+  const p = EMPLOYEES.find(e=>e.id===openEmpId);
+  renderModal(p);
+}
+
+function quickSet(gk, lvl){
+  if(!openEmpId) return;
+  const g = SKILL_GROUPS[gk];
+  if(!state.evals[openEmpId]) state.evals[openEmpId]={};
+  g.skills.forEach(sk=>{
+    if(prefillMark[openEmpId]) delete prefillMark[openEmpId][sk];   // ← 新增這行
+    if(lvl===''){
+      delete state.evals[openEmpId][sk];
+    }else{
+      state.evals[openEmpId][sk] = lvl;
+    }
+  });
+  touchEmp(openEmpId);
+  saveState();
+  const p = EMPLOYEES.find(e=>e.id===openEmpId);
+  renderModal(p);
+}
+
+function markAllNormal(){
+  if(!openEmpId) return;
+  if(!state.evals[openEmpId]) state.evals[openEmpId]={};
+  ALL_SKILL_KEYS.forEach(sk=>{
+    if(!state.evals[openEmpId][sk]){
+      state.evals[openEmpId][sk] = 'normal';
+    }
+  });
+  touchEmp(openEmpId);
+  saveState();
+  const p = EMPLOYEES.find(e=>e.id===openEmpId);
+  renderModal(p);
+  showToast(`已將未評項目全部標為「${LEVELS.normal.label}」`,'success');
+}
+
+function changeStore(){
+  if(!confirm('要切換身份嗎?目前評核資料仍會保留在本機。')) return;
+  state.role='';
+  state.store='';
+  state.authed=false;
+  saveState();
+  _lockMode='choose';
+  render();
+}
+
+// 完成評核登出 - 清掉身份和評核資料,回到首頁
+// 2026/07/28 補：登出會把本機 state.evals 整組清空且無法復原（除非之前已「送出評核」同步到雲端），
+// 之前這裡完全沒有確認，手滑點到就整店資料歸零。現在比照 changeStore() 的做法先跳確認，
+// 且只要本機還有任何評核資料就明確警告會消失。
+function logoutAndHome(){
+  const evalCount = Object.keys(state.evals||{}).length;
+  if(evalCount > 0){
+    const ok = confirm(
+      `目前本機還留著 ${evalCount} 位夥伴的評核資料。\n` +
+      `如果還沒按過「📤 送出評核」同步到雲端，登出後這些資料會直接消失、無法復原！\n\n` +
+      `確定要登出嗎？`
+    );
+    if(!ok) return;
+  }
+  state.role='';
+  state.store='';
+  state.manager='';
+  state.evals={};
+  state.shifts={};
+  state.authed=false;
+  state.updated='';
+  saveState();
+  _lockMode='choose';
+  const panel=document.getElementById('sync-panel');
+  if(panel) panel.remove();
+  showToast('已登出 · 回到首頁','success');
+  render();
+}
+
+// ── 送出評核 (生成同步碼) ──
+function submitEval(){
+  state.updated = new Date().toISOString();
+  saveState();
+
+  // 收集所有有評核資料的員工 → 對應姓名 (給雲端 Sheet 用)
+  const names = {};
+  const touched = new Set([...Object.keys(state.evals||{}), ...Object.keys(state.shifts||{})]);
+  touched.forEach(empId=>{
+    const e = EMPLOYEES.find(x=>x.id===empId);
+    if(e) names[empId] = e.name;
+  });
+
+  // 緊湊化的 payload
+  const payload = {
+    v: 2,
+    type: 'sm-skill-eval',
+    role: state.role||'store_manager',
+    store: state.role==='supervisor' ? '(跨店)區督導評核' : state.store,
+    manager: state.manager,
+    updated: state.updated,
+    evals: state.evals,
+    shifts: state.shifts || {},
+    names: names
+  };
+  const json = JSON.stringify(payload);
+
+  // 顯示同步碼面板
+  const root = document.getElementById('root');
+  // 在頂端插入 sync panel
+  let panel = document.getElementById('sync-panel');
+  if(!panel){
+    panel = document.createElement('div');
+    panel.id = 'sync-panel';
+    panel.className = 'sync-panel';
+    root.insertBefore(panel, root.children[2]);
+  }
+  panel.innerHTML = `
+    <div class="sync-title">📤 評核已送出 <span class="sync-indicator sync-on" id="sync-stat">⏳ 上傳雲端中...</span></div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:14px;line-height:1.7">
+      ✅ <b>已存到本機</b> ${fmtTime(state.updated)}<br>
+      ☁️ <b>正在同步到雲端</b>，總部戰情室按「同步雲端評核」就會更新
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <button class="btn btn-primary" style="width:100%" onclick="logoutAndHome()">🚪 完成評核 · 登出回首頁</button>
+      <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('sync-panel').remove()">繼續編輯</button>
+    </div>
+  `;
+  panel.scrollIntoView({behavior:'smooth', block:'start'});
+
+  // 若有設定雲端 URL 就送出
+  if(SYNC_URL){
+    syncToCloud(payload);
+  }
+}
+
+function copySync(){
+  const text = document.getElementById('sync-text').value;
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(()=>{
+      showToast('已複製！請貼到 LINE 傳給總部','success');
+    },()=>{
+      fallbackCopy(text);
+    });
+  }else{
+    fallbackCopy(text);
+  }
+}
+
+function fallbackCopy(text){
+  const ta = document.getElementById('sync-text');
+  ta.select();
+  try{
+    document.execCommand('copy');
+    showToast('已複製！','success');
+  }catch(e){
+    showToast('複製失敗，請手動長按選取','error');
+  }
+}
+
+// 用隱形 iframe form 提交 — Apps Script POST 最可靠的方式(處理 cross-origin + redirect)
+function _formPostToCloud(url, data){
+  return new Promise(function(resolve,reject){
+    const frameName = '_smPostFrame_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
+    const iframe = document.createElement('iframe');
+    iframe.name = frameName;
+    iframe.style.cssText = 'position:absolute;width:1px;height:1px;left:-9999px;top:-9999px;border:0';
+    document.body.appendChild(iframe);
+
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = frameName;
+    form.enctype = 'application/x-www-form-urlencoded';
+    form.style.display = 'none';
+
+    const input = document.createElement('input');
+    input.type = 'hidden';
+    input.name = 'payload';
+    input.value = JSON.stringify(data);
+    form.appendChild(input);
+
+    let done = false;
+    const timer = setTimeout(()=>{
+      if(done) return; done=true; cleanup();
+      // iframe 沒回應就當失敗
+      reject(new Error('iframe timeout'));
+    }, 15000);
+    function cleanup(){
+      try{form.remove();}catch(e){}
+      try{iframe.remove();}catch(e){}
+      clearTimeout(timer);
+    }
+    iframe.onload = ()=>{
+      // Apps Script 回 200 + 跳轉到 googleusercontent — iframe load 觸發後即視為成功
+      if(done) return;
+      // 多等 600ms 確保 Apps Script 真的處理完
+      setTimeout(()=>{
+        done=true; cleanup();
+        resolve();
+      }, 600);
+    };
+    iframe.onerror = ()=>{
+      if(done) return; done=true; cleanup();
+      reject(new Error('iframe error'));
+    };
+
+    document.body.appendChild(form);
+    form.submit();
+  });
+}
+
+// 用 Apps Script 原生 RPC (google.script.run) — 從 HtmlService 服務的頁面最可靠
+function _gscriptRun(fn, ...args){
+  return new Promise(function(resolve,reject){
+    if(typeof google==='undefined' || !google.script || !google.script.run){
+      reject(new Error('google.script.run 不可用'));
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(function(err){reject(new Error(err&&err.message||'RPC 失敗'));})[fn].apply(null,args);
+  });
+}
+
+async function syncToCloud(payload){
+  if(!SYNC_URL) return;
+  const stat = document.getElementById('sync-stat');
+  let lastErr=null;
+  // 嘗試 1: Apps Script 原生 RPC (最可靠,跨網域/redirect 都不影響)
+  try{
+    await _gscriptRun('saveEvalRpc', payload);
+    if(stat){ stat.textContent='✓ 雲端同步完成'; stat.style.background='var(--green)'; }
+    showToast('☁️ 雲端同步完成','success');
+    return;
+  }catch(e){lastErr=e;}
+  // 嘗試 2: hidden iframe form POST (備援,適用非 HtmlService 環境)
+  try{
+    await _formPostToCloud(SYNC_URL, payload);
+    if(stat){ stat.textContent='✓ 雲端同步完成'; stat.style.background='var(--green)'; }
+    showToast('☁️ 雲端同步完成','success');
+    return;
+  }catch(e){lastErr=e;}
+  // 都失敗
+  if(stat){ stat.textContent='⚠ 雲端同步失敗'; stat.style.background='#ef4444'; }
+  showToast('雲端同步失敗:'+(lastErr&&lastErr.message||'unknown'),'error');
+}
+
+// ── JSONP 雲端拉取(避開 CORS) ──
+function _jsonpFetch(baseUrl, params, timeoutMs){
+  return new Promise(function(resolve,reject){
+    const cbName = '_smCb_'+Date.now()+'_'+Math.floor(Math.random()*1e6);
+    const sep = baseUrl.indexOf('?')>=0 ? '&' : '?';
+    const qs = Object.keys(params||{}).map(k=>encodeURIComponent(k)+'='+encodeURIComponent(params[k])).join('&');
+    const fullUrl = baseUrl+sep+qs+'&callback='+cbName+'&t='+Date.now();
+    const script = document.createElement('script');
+    let done = false;
+    const timer = setTimeout(()=>{
+      if(done) return; done=true; cleanup();
+      reject(new Error('timeout'));
+    }, timeoutMs||12000);
+    function cleanup(){
+      try{delete window[cbName];}catch(e){window[cbName]=undefined;}
+      if(script&&script.parentNode) script.parentNode.removeChild(script);
+      clearTimeout(timer);
+    }
+    window[cbName] = (data)=>{
+      if(done) return; done=true; cleanup();
+      resolve(data);
+    };
+    script.onerror = ()=>{
+      if(done) return; done=true; cleanup();
+      reject(new Error('script error'));
+    };
+    script.src = fullUrl;
+    document.head.appendChild(script);
+  });
+}
+
+// ── 從雲端取回(依角色/店別 找最新一筆評核合併進來) ──
+async function loadFromCloud(){
+  console.log('[loadFromCloud] start, store=',state.store,'role=',state.role,'SYNC_URL=',SYNC_URL);
+  if(!SYNC_URL) { console.log('[loadFromCloud] abort: no SYNC_URL'); return; }
+  if(state.role!=='supervisor' && !state.store) { console.log('[loadFromCloud] abort: no store/role'); return; }
+  try{
+    let evalsArr = null;
+    // 嘗試 1: google.script.run RPC (最可靠)
+    try{
+      evalsArr = await _gscriptRun('fetchAllEvalsRpc');
+      console.log('[loadFromCloud] RPC success, evals=',evalsArr&&evalsArr.length);
+    }catch(e1){
+      // 嘗試 2: JSONP
+      try{
+        const data = await _jsonpFetch(SYNC_URL, {action:'fetch'}, 12000);
+        if(data && Array.isArray(data.evals)) evalsArr = data.evals;
+        console.log('[loadFromCloud] JSONP success, evals=',evalsArr&&evalsArr.length);
+      }catch(e2){
+        console.log('[loadFromCloud] both failed', e1.message, e2.message);
+        return;
+      }
+    }
+    if(!Array.isArray(evalsArr)) { console.log('[loadFromCloud] abort: not array'); return; }
+    console.log('[loadFromCloud] all pkgs:',evalsArr.map(p=>({role:p&&p.role,store:p&&p.store,updated:p&&p.updated,evalsN:p&&p.evals&&Object.keys(p.evals).length})));
+    let mine = null;
+    if(state.role==='supervisor'){
+      mine = evalsArr
+        .filter(p => p && p.role==='supervisor')
+        .sort((a,b)=> new Date(b.updated||0) - new Date(a.updated||0))[0];
+    } else {
+      mine = evalsArr
+        .filter(p => p && p.store===state.store && p.role!=='supervisor')
+        .sort((a,b)=> new Date(b.updated||b.submittedAt||0) - new Date(a.updated||a.submittedAt||0))[0];
+    }
+    console.log('[loadFromCloud] picked pkg:',mine?{store:mine.store,manager:mine.manager,updated:mine.updated,evalsN:Object.keys(mine.evals||{}).length}:'(none)');
+    if(!mine) return;
+
+    // 轉換為 {empId: {skill:level}} / {empId: {shift:bool}} 統一格式
+    let cloudEvals = {};
+    let cloudShifts = {};
+
+    if(Array.isArray(mine.employees)){
+      // 格式 A: 舊版 dashboard-auto (employees 陣列, 用 name 對應)
+      mine.employees.forEach(emp=>{
+        if(!emp || !emp.name) return;
+        const e = EMPLOYEES.find(x => x.name===emp.name && (state.role==='supervisor' || x.store===state.store));
+        if(!e) return;
+        if(emp.skills) cloudEvals[e.id] = emp.skills;
+        if(emp.shifts) cloudShifts[e.id] = emp.shifts;
+      });
+    } else {
+      // 格式 B: 新版 SM 評核 v2 (evals/shifts 字典)
+      // ⭐ key 可能是 SM 自定 ID (如 BQ003) 或 真名 (戰情室 push 時 id 空就用 name)
+      //   → 一律先翻譯成本地 EMPLOYEES.id,避免 render 時 lookup miss
+      const rawEvals = mine.evals || {};
+      const rawShifts = mine.shifts || {};
+      const namesMap = mine.names || {};
+      function translateKey(key){
+        // 1) key 本身就是本地 EMPLOYEE id → 直接用
+        const byId = EMPLOYEES.find(x => x.id===key && (state.role==='supervisor' || x.store===state.store));
+        if(byId) return byId.id;
+        // 2) 用 names 字典查真名,再 by name 找 EMPLOYEE
+        const realName = namesMap[key] || key;
+        const byName = EMPLOYEES.find(x => x.name===realName && (state.role==='supervisor' || x.store===state.store));
+        if(byName) return byName.id;
+        // 3) 沒對應 → 保留原 key (至少資料還在,不會 lookup miss)
+        return key;
+      }
+      const translated=[], unresolved=[];
+      Object.keys(rawEvals).forEach(k => {
+        const tk = translateKey(k);
+        if(tk!==k) translated.push(k+'→'+tk); else if(!EMPLOYEES.find(x=>x.id===k)) unresolved.push(k);
+        cloudEvals[tk] = rawEvals[k];
+      });
+      Object.keys(rawShifts).forEach(k => { cloudShifts[translateKey(k)] = rawShifts[k]; });
+      console.log('[loadFromCloud] key translation:', {translated:translated, unresolved:unresolved, finalKeys:Object.keys(cloudEvals)});
+    }
+
+    // ✅ 雲端是 SOT (single source of truth) — 完全替換本地
+    state.evals = cloudEvals;
+    state.shifts = cloudShifts;
+    state.updated = mine.updated || mine.submittedAt || state.updated;
+    saveState();
+    render();
+    if(Object.keys(cloudEvals).length || Object.keys(cloudShifts).length){
+      showToast('☁ 已載入雲端最新評核','success');
+    }
+  }catch(e){
+    console.log('[loadFromCloud]',e.message);
+  }
+}
+
+// ── 手動從雲端拉最新評核(含戰情室 push 的修改) ──
+async function manualReloadFromCloud(btn){
+  if(btn){
+    btn.textContent = '⏳';
+    btn.disabled = true;
+  }
+  const before = JSON.stringify(state.evals)+JSON.stringify(state.shifts);
+  await loadFromCloud();
+  const after = JSON.stringify(state.evals)+JSON.stringify(state.shifts);
+  if(btn){
+    btn.textContent = '🔄';
+    btn.disabled = false;
+  }
+  if(before === after){
+    showToast('☁ 雲端無新資料 (或對應不到)','info');
+  }else{
+    showToast('☁ 已更新！','success');
+  }
+}
+
+// ── Toast ──
+function showToast(msg, type){
+  const el = document.getElementById('toast');
+  if(!el) return;
+  el.className = 'toast show '+(type||'');
+  el.textContent = msg;
+  setTimeout(()=>{
+    el.classList.remove('show');
+  }, 2200);
+}
+
+// ── 啟動 ──
+render();
+if(SYNC_URL && (state.store || state.role==='supervisor')) loadFromCloud();
+</script>
+
+<!--
+══════════════════════════════════════════════════════════════════════════
+ 進階：Google Apps Script Web App 範本（複製到 script.google.com）
+ ──────────────────────────────────────────────────────────────────────
+ const SHEET_ID = '1bpnKr4H5t5MHt10ol-uVgYaCbkm41ofDKH2GsxxFq5o';
+ const TAB_NAME = '技能評核';
+
+ function doPost(e) {
+   try {
+     const body = JSON.parse(e.postData.contents);
+     const ss = SpreadsheetApp.openById(SHEET_ID);
+     let sh = ss.getSheetByName(TAB_NAME);
+     if(!sh) {
+       sh = ss.insertSheet(TAB_NAME);
+       sh.appendRow(['送出時間','門市','主管','員工ID','技能','等級']);
+     }
+     const ts = body.updated || new Date().toISOString();
+     Object.keys(body.evals||{}).forEach(empId => {
+       const e2 = body.evals[empId];
+       Object.keys(e2).forEach(skill => {
+         sh.appendRow([ts, body.store, body.manager, empId, skill, e2[skill]]);
+       });
+     });
+     return ContentService.createTextOutput(JSON.stringify({ok:true}));
+   } catch(err) {
+     return ContentService.createTextOutput(JSON.stringify({ok:false,err:err.message}));
+   }
+ }
+
+ function doGet(e) {
+   try {
+     const ss = SpreadsheetApp.openById(SHEET_ID);
+     const sh = ss.getSheetByName(TAB_NAME);
+     if(!sh) return ContentService.createTextOutput(JSON.stringify({evals:{},updated:null}));
+     const data = sh.getDataRange().getValues();
+     const store = e.parameter.store;
+     const evals = {};
+     let updated = null;
+     for(let i=1;i<data.length;i++) {
+       const [ts,st,mgr,empId,skill,lvl] = data[i];
+       if(store && st!==store) continue;
+       if(!evals[empId]) evals[empId] = {};
+       evals[empId][skill] = lvl;
+       if(!updated || ts>updated) updated = ts;
+     }
+     return ContentService.createTextOutput(JSON.stringify({evals,updated}));
+   } catch(err) {
+     return ContentService.createTextOutput(JSON.stringify({err:err.message}));
+   }
+ }
+
+ // 部署：發佈 → 新增部署 → 類型「網頁應用程式」→ 執行身分「我」→ 存取「任何人」
+══════════════════════════════════════════════════════════════════════════
+-->
+</body>
+</html>

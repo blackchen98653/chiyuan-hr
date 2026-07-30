@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>季緣飲品 · 新進夥伴報到</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F2; --card:#FFFFFF; --ink:#2A2320; --muted:#8A7E6F;
+    --tea:#34503F; --tea-deep:#263B2E; --tea-soft:#E9EFE9;
+    --sugar:#BE7E33; --sugar-soft:#F6ECDC; --pearl:#39291E;
+    --line:#EBE3D6; --ok:#4C8A5C;
+    --shadow:0 6px 24px rgba(48,38,26,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    background:var(--paper); color:var(--ink); line-height:1.6; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:480px;margin:0 auto;padding:0 18px 64px;min-height:100vh}
+
+  .brand{padding:30px 4px 18px;display:flex;align-items:center;gap:12px}
+  .brand-txt .en{font-size:11px;letter-spacing:.28em;color:var(--sugar);text-transform:uppercase;font-weight:700;margin-top:2px}
+
+  .hero{margin:6px 0 22px}
+  .hero h1{font-size:27px;font-weight:900;letter-spacing:.01em;margin:0 0 8px;line-height:1.28}
+  .hero h1 .hl{color:var(--tea)}
+  .hero p{margin:0;color:var(--muted);font-size:14.5px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
+  .field{margin-bottom:18px}
+  .field:last-child{margin-bottom:0}
+  label.lab{display:block;font-size:13px;font-weight:700;color:var(--tea-deep);margin-bottom:8px;letter-spacing:.02em}
+  .req{color:var(--sugar)}
+  input,select{
+    width:100%;font-family:inherit;font-size:16px;color:var(--ink);
+    background:#fff;border:1.5px solid var(--line);border-radius:12px;
+    padding:13px 14px;appearance:none;transition:border-color .15s,box-shadow .15s;
+  }
+  input:focus,select:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+  select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2334503F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+
+  .cta{
+    width:100%;margin-top:6px;font-family:inherit;font-size:16.5px;font-weight:800;letter-spacing:.04em;cursor:pointer;
+    color:#fff;background:var(--tea);border:none;border-radius:14px;padding:16px;
+    box-shadow:0 6px 16px rgba(52,80,63,.28);transition:transform .08s,background .15s;
+  }
+  .cta:active{transform:translateY(1px)}
+  .cta:disabled{background:#C3BFB6;box-shadow:none;cursor:not-allowed}
+  .err{color:#B4472E;font-size:13px;margin:10px 2px 0;display:none}
+  .err.show{display:block}
+
+  /* dashboard */
+  #dash{display:none}
+  .welcome{background:linear-gradient(135deg,var(--tea) 0%,var(--tea-deep) 100%);color:#fff;border-radius:20px;padding:22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .welcome .deco{position:absolute;right:-18px;top:-18px;opacity:.16}
+  .welcome .hi{font-size:14px;color:#CFE0D2;letter-spacing:.04em}
+  .welcome .nm{font-size:24px;font-weight:900;margin:2px 0 14px}
+  .welcome .meta{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:600}
+  .dates{display:flex;gap:10px;margin:14px 0 24px}
+  .dbox{flex:1;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px 14px}
+  .dbox .k{font-size:11.5px;color:var(--muted);font-weight:700;letter-spacing:.03em}
+  .dbox .v{font-size:16px;font-weight:800;color:var(--tea-deep);margin-top:3px}
+  .dbox.due .v{color:var(--sugar)}
+
+  .sec-head{display:flex;align-items:baseline;justify-content:space-between;margin:0 2px 12px}
+  .sec-head h2{font-size:17px;font-weight:900;margin:0;letter-spacing:.02em}
+  .sec-head .note{font-size:12px;color:var(--muted)}
+
+  .prog{display:flex;align-items:center;gap:10px;margin:0 2px 14px}
+  .pearls{display:flex;gap:5px;flex-wrap:wrap;flex:1}
+  .pearls i{width:11px;height:11px;border-radius:50%;background:var(--line);transition:background .2s,transform .2s}
+  .pearls i.f{background:var(--pearl);transform:scale(1.08)}
+  .pearls i.p{background:var(--sugar);transform:scale(1.08)}
+  .prog .cnt{font-size:13px;font-weight:800;color:var(--tea-deep);white-space:nowrap}
+
+  ul.check{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+  li.item{
+    background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 14px;
+    display:flex;gap:13px;cursor:pointer;transition:border-color .15s,background .15s;
+  }
+  li.item:active{background:#FCFAF6}
+  li.item.done{border-color:#CFE2D3;background:#F5FAF5}
+  li.item.pending{border-color:#EAD3B4;background:#FBF5EB}
+  li.item.na{opacity:.7}
+  .box{
+    flex:none;width:24px;height:24px;border-radius:8px;border:2px solid var(--line);
+    background:#fff;display:grid;place-items:center;margin-top:1px;transition:all .15s;
+  }
+  li.item.done .box{background:var(--ok);border-color:var(--ok)}
+  li.item.pending .box{background:var(--sugar);border-color:var(--sugar)}
+  .box svg{width:14px;height:14px;stroke:#fff;stroke-width:3.4;fill:none;opacity:0;transition:opacity .15s}
+  li.item.done .box svg.ck,li.item.pending .box svg.ck{opacity:1}
+  li.item.na .box{background:#EDEAE3;border-color:#DED8CB}
+  .txt{flex:1;min-width:0}
+  .txt .t{font-weight:700;font-size:15px;letter-spacing:.01em}
+  li.item.done .txt .t{color:var(--tea)}
+  .txt .d{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.5}
+  .idx{flex:none;width:22px;font-size:12px;font-weight:800;color:var(--sugar);text-align:center;margin-top:2px}
+  .stag{display:inline-block;font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px;margin-top:6px}
+  .stag.cloud{background:#E4F0E6;color:var(--ok)}
+  .stag.pend{background:var(--sugar-soft);color:#A9701F}
+  .stag.na{background:#EDEAE3;color:#6E6357}
+
+  .item.info{cursor:default}
+  .item.info .box{visibility:hidden}
+  .tag{display:inline-block;background:var(--sugar-soft);color:var(--sugar);font-size:11px;font-weight:800;border-radius:6px;padding:2px 7px;margin-top:6px}
+
+  .learn{margin-top:26px}
+  .doc{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px 16px;text-decoration:none;color:inherit;box-shadow:var(--shadow);transition:border-color .15s,transform .08s}
+  .doc:active{transform:translateY(1px)}
+  .doc .dic{flex:none;width:42px;height:42px;border-radius:12px;background:var(--tea-soft);display:grid;place-items:center}
+  .doc .dic svg{width:21px;height:21px;fill:none;stroke:var(--tea);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .doc .dt{flex:1;min-width:0}
+  .doc .dt .t1{font-weight:800;font-size:15px;color:var(--tea)}
+  .doc .dt .t2{font-size:12px;color:var(--muted);margin-top:2px}
+  .doc .go{flex:none;color:#D8D0C2;font-size:20px}
+  .learn-note{font-size:12px;color:var(--muted);margin:10px 4px 0;line-height:1.6}
+
+  .waiting{background:var(--card);border:1px dashed var(--line);border-radius:16px;padding:26px 20px;text-align:center;color:var(--muted);font-size:13.5px;line-height:1.9;box-shadow:var(--shadow)}
+  .waiting .wic{width:52px;height:52px;border-radius:15px;background:var(--sugar-soft);display:grid;place-items:center;margin:0 auto 14px}
+  .waiting .wic svg{width:26px;height:26px;fill:none;stroke:var(--sugar);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .waiting b{color:var(--tea-deep)}
+  .waiting .wq{display:inline-block;background:#F6F2EA;border-radius:8px;padding:3px 10px;margin:2px;font-weight:700;color:var(--tea-deep);font-size:12.5px}
+  .btn-2{width:100%;margin-top:14px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;color:var(--tea);background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px}
+  .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:30px;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="brand">
+    <span class="brand-txt">
+      <span class="en">CHIYUAN TEA</span>
+    </span>
+  </div>
+
+  <!-- ============ SCREEN 1: LOGIN ============ -->
+  <section id="reg">
+    <div class="hero">
+      <h1>歡迎加入，<br>請確認你的<span class="hl">報到資料</span></h1>
+      <p>輸入姓名與門市，系統會對應你的報到資料。</p>
+    </div>
+
+    <div class="card">
+      <div class="field">
+        <label class="lab" for="nm">姓名 <span class="req">*</span></label>
+        <input id="nm" type="text" placeholder="請輸入你的姓名" autocomplete="name">
+      </div>
+
+      <div class="field">
+        <label class="lab" for="store">報到門市 <span class="req">*</span></label>
+        <select id="store">
+          <option value="" disabled selected>選擇你的門市</option>
+        </select>
+      </div>
+
+      <button class="cta" id="submit">進入我的報到頁</button>
+      <div class="err" id="err">請輸入姓名並選擇門市。</div>
+    </div>
+    <p class="foot">HR - CHIYUAN</p>
+  </section>
+
+  <!-- ============ SCREEN 2: DASHBOARD ============ -->
+  <section id="dash">
+    <div class="welcome">
+      <svg class="deco" width="90" height="90" viewBox="0 0 40 44"><path d="M8 12h24l-2.5 26a4 4 0 0 1-4 3.6H14.5a4 4 0 0 1-4-3.6L8 12Z" fill="#fff"/></svg>
+      <div class="hi">哈囉，歡迎報到 👋</div>
+      <div class="nm" id="wNm">—</div>
+      <div class="meta">
+        <span class="chip" id="wStore">—</span>
+        <span class="chip" id="wJob">—</span>
+        <span class="chip" id="wDate">—</span>
+      </div>
+    </div>
+
+    <div class="dates">
+      <div class="dbox">
+        <div class="k">滿月考核提示</div>
+        <div class="v" id="dRemind">—</div>
+      </div>
+      <div class="dbox due">
+        <div class="k">考核最晚完成</div>
+        <div class="v" id="dDue">—</div>
+      </div>
+    </div>
+
+    <div class="sec-head">
+      <h2>報到 Checklist</h2>
+      <span class="note">綠色＝HR 已登記</span>
+    </div>
+    <div class="prog">
+      <div class="pearls" id="pearls"></div>
+      <span class="cnt" id="cnt">0 / 9</span>
+    </div>
+
+    <ul class="check" id="list"></ul>
+
+    <div class="learn">
+      <div class="sec-head"><h2>新人學習資料</h2></div>
+      <a class="doc" href="https://drive.google.com/file/d/1tPsq7jLdakJYHcsx47zUkYyyUyecLoMF/view" target="_blank" rel="noopener">
+        <span class="dic"><svg viewBox="0 0 24 24"><path d="M6.5 3.2h7.2l4.3 4.3v13.3H6.5z"/><path d="M13.5 3.2v4.5h4.5"/><path d="M9.4 12.4h5.6M9.4 15.6h5.6M9.4 18.4h3.4"/></svg></span>
+        <span class="dt">
+          <span class="t1">季緣標準化手冊</span>
+          <span class="t2">PDF・49 頁・門市作業標準（必讀）</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <a class="doc" href="items.html" target="_blank" rel="noopener" style="margin-top:11px">
+        <span class="dic"><svg viewBox="0 0 24 24"><path d="M5.2 4.2h13.6v16.6H5.2z"/><path d="M8.6 9h6.8M8.6 12.6h6.8M8.6 16.2h4"/><path d="M12 4.2V2.9"/></svg></span>
+        <span class="dt">
+          <span class="t1">新人考核項目說明</span>
+          <span class="t2">滿月考核會考什麼・提前準備</span>
+        </span>
+        <span class="go">›</span>
+      </a>
+      <p class="learn-note">請先完整閱讀，實作時如有疑問可隨時回來查閱。</p>
+    </div>
+
+    <p class="foot">綠色項目 HR 已登記；橘色是你回報「已完成、待 HR 核對」。</p>
+  </section>
+
+  <!-- ============ SCREEN 3: NOT FOUND ============ -->
+  <section id="notfound" style="display:none">
+    <div class="hero">
+      <h1>還沒找到<br>你的<span class="hl">報到資料</span></h1>
+      <p>你輸入的資料目前不在名冊中。</p>
+    </div>
+    <div class="waiting">
+      <div class="wic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></div>
+      你填的是：<br>
+      <span class="wq" id="nfNm">—</span> <span class="wq" id="nfStore">—</span><br><br>
+      請等 <b>總部 HR 建立好你的報到資料</b>後再登入。<br>
+      若確認資料無誤仍無法進入，請<b>聯繫 HR 協助建立</b>。
+    </div>
+    <button class="btn-2" id="nfBack">返回重新輸入</button>
+    <p class="foot">HR - CHIYUAN</p>
+  </section>
+
+</div>
+
+<script src="assets/config.js"></script>
+<script>
+const H = window.CHIYUAN;
+const $ = id => document.getElementById(id);
+
+/* 門市下拉：依 config.js 產生 */
+(function fillStores(){
+  const sel = $('store');
+  Object.entries(H.STORES).forEach(([grp, arr])=>{
+    const og = document.createElement('optgroup'); og.label = grp;
+    arr.forEach(s=>{ const o=document.createElement('option'); o.textContent=s; og.appendChild(o); });
+    sel.appendChild(og);
+  });
+})();
+
+function fmt(d){ return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`; }
+function addMonths(base, n){ const d=new Date(base); const day=d.getDate(); d.setMonth(d.getMonth()+n); if(d.getDate()<day) d.setDate(0); return d; }
+function show(name){ ['reg','dash','notfound'].forEach(x=>$(x).style.display = x===name?'block':'none'); window.scrollTo(0,0); }
+
+$('submit').addEventListener('click', async ()=>{
+  const nm = $('nm').value.trim();
+  const store = $('store').value;
+  if(!nm || !store){ $('err').classList.add('show'); return; }
+  $('err').classList.remove('show');
+  $('submit').disabled = true; $('submit').textContent = '查詢中…';
+  const person = await H.DataAPI.findPerson(nm, store);
+  $('submit').disabled = false; $('submit').textContent = '進入我的報到頁';
+  if(person){ buildDash(person); }
+  else { $('nfNm').textContent = nm; $('nfStore').textContent = '📍 '+store; show('notfound'); }
+});
+$('nfBack').addEventListener('click', ()=>show('reg'));
+
+let CUR = null;
+function buildDash(p){
+  CUR = p;
+  show('dash');
+  $('wNm').textContent = p.name;
+  $('wStore').textContent = '📍 '+p.store;
+  $('wJob').textContent = p.job==='FT' ? '正職' : '兼職';
+  const base = new Date(p.join);
+  $('wDate').textContent = '到職 '+fmt(base);
+  $('dRemind').textContent = fmt(addMonths(base,1));
+  $('dDue').textContent = fmt(addMonths(base,3));
+  renderChecklist();
+}
+
+function renderChecklist(){
+  const cloud = H.DataAPI.cloudTicks(CUR);         // true / "na" / false（雲端大表為準）
+  const self  = H.DataAPI.selfTicks(CUR) || new Array(9).fill(false);
+  const list = $('list'); list.innerHTML='';
+
+  H.CHECKLIST.ITEMS.forEach((it, i)=>{
+    const li = document.createElement('li');
+    if(it.info){
+      li.className='item info';
+      li.innerHTML = `
+        <span class="idx">${i+1}</span>
+        <span class="box"></span>
+        <span class="txt"><span class="t">${it.t}</span>
+          ${it.d?`<span class="d">${it.d}</span>`:''}
+          ${it.tag?`<span class="tag">${it.tag}</span>`:''}</span>`;
+      list.appendChild(li); return;
+    }
+    const cv = cloud[i];                            // 這格的雲端狀態
+    const locked = (cv===true || cv==='na');        // 雲端已定案，不可改
+    const pending = !locked && !!self[i];           // 新人自報、待核對
+    li.className = 'item' + (cv===true?' done':'') + (cv==='na'?' na':'') + (pending?' pending':'');
+    li.dataset.i = i;
+    const stag = cv===true ? `<span class="stag cloud">HR 已登記</span>`
+               : cv==='na' ? `<span class="stag na">免（不投保）</span>`
+               : pending   ? `<span class="stag pend">待 HR 核對</span>`
+               : '';
+    li.innerHTML = `
+      <span class="idx">${i+1}</span>
+      <span class="box"><svg class="ck" viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg></span>
+      <span class="txt">
+        <span class="t">${it.t}</span>
+        ${it.d?`<span class="d">${it.d}</span>`:''}
+        ${stag}
+      </span>`;
+    if(!locked){
+      li.addEventListener('click', ()=>toggleSelf(i));
+    }
+    list.appendChild(li);
+  });
+  updateProgress(cloud, self);
+}
+
+function toggleSelf(i){
+  const base = H.DataAPI.selfTicks(CUR) || [];
+  const self = new Array(9).fill(false).map((_,k)=>!!base[k]);
+  self[i] = !self[i];
+  H.DataAPI.saveSelfTick(CUR, self);
+  renderChecklist();
+}
+
+function updateProgress(cloud, self){
+  const officialDone = cloud.filter(v=>v===true||v==='na').length;
+  const pend = cloud.map((v,i)=> (v!==true && v!=='na' && self[i])).filter(Boolean).length;
+  $('cnt').textContent = `${officialDone} / 9 已登記` + (pend?`　＋${pend} 待核對`:'');
+  const pearls = $('pearls'); pearls.innerHTML='';
+  for(let i=0;i<9;i++){
+    const el=document.createElement('i');
+    const cv=cloud[i];
+    if(cv===true||cv==='na') el.className='f';
+    else if(self[i]) el.className='p';
+    pearls.appendChild(el);
+  }
+}
+</script>
+</body>
+</html>

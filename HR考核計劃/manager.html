@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>店經理考核平台 · CHIYUAN TEA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F2;--card:#FFFFFF;--ink:#2A2320;--muted:#8A7E6F;
+    --tea:#34503F;--tea-deep:#263B2E;--tea-soft:#E9EFE9;
+    --sugar:#BE7E33;--sugar-soft:#F6ECDC;--pearl:#39291E;
+    --line:#EBE3D6;--ok:#4C8A5C;--warn:#C4611F;--bad:#B4472E;--red:#C0392B;--red-soft:#FBE3DF;
+    --shadow:0 6px 24px rgba(48,38,26,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:480px;margin:0 auto;padding:0 18px 64px;min-height:100vh}
+
+  .top{padding:28px 4px 14px;display:flex;align-items:center;justify-content:space-between}
+  .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--sugar);text-transform:uppercase;font-weight:800}
+  .back{font-size:13px;font-weight:700;color:var(--tea);background:none;border:none;cursor:pointer;padding:6px 2px;display:none}
+  .back::before{content:"‹ "}
+
+  h1.big{font-size:26px;font-weight:900;margin:4px 4px 6px;line-height:1.3}
+  h1.big .hl{color:var(--tea)}
+  .lead{margin:0 4px 22px;color:var(--muted);font-size:14px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px 20px;box-shadow:var(--shadow)}
+  label.lab{display:block;font-size:13px;font-weight:700;color:var(--tea-deep);margin-bottom:8px;letter-spacing:.02em}
+  select{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;appearance:none;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2334503F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
+  select:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+  .hint{font-size:12px;color:var(--muted);margin:12px 2px 0}
+  .cta{width:100%;margin-top:16px;font-family:inherit;font-size:16.5px;font-weight:800;letter-spacing:.04em;cursor:pointer;color:#fff;background:var(--tea);border:none;border-radius:14px;padding:16px;box-shadow:0 6px 16px rgba(52,80,63,.28);transition:transform .08s,background .15s}
+  .cta:active{transform:translateY(1px)}
+  .cta:disabled{background:#C3BFB6;box-shadow:none;cursor:not-allowed}
+
+  /* ---- roster ---- */
+  #pick,#roster,#eval{display:none}
+  .menu{display:block;text-decoration:none;color:inherit;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:22px;box-shadow:var(--shadow);margin-bottom:14px;cursor:pointer;transition:transform .08s,border-color .15s}
+  .menu:active{transform:translateY(1px)}
+  .menu:hover{border-color:#DCD3C3}
+  .menu .mtop{display:flex;align-items:center;gap:14px}
+  .menu .mic{flex:none;width:52px;height:52px;border-radius:15px;display:grid;place-items:center}
+  .menu.a .mic{background:var(--tea-soft)}
+  .menu.b .mic{background:var(--sugar-soft)}
+  .menu .mic svg{width:26px;height:26px;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .menu.a .mic svg{stroke:var(--tea)}
+  .menu.b .mic svg{stroke:var(--sugar)}
+  .menu .mt{flex:1;min-width:0}
+  .menu .mt .mh{display:block;font-size:18px;font-weight:900;letter-spacing:.02em}
+  .menu .mt .ms{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
+  .menu .mgo{flex:none;color:#D8D0C2;font-size:22px}
+  .menu .mdesc{font-size:12.5px;color:#6E6357;line-height:1.7;margin-top:13px;padding-top:13px;border-top:1px solid var(--line)}
+  .menu .mdesc b{color:var(--tea-deep)}
+  .store-head{display:flex;align-items:center;gap:10px;margin:2px 4px 18px}
+  .store-head .pin{font-size:15px}
+  .store-head .nm{font-size:22px;font-weight:900}
+  .store-head .ct{margin-left:auto;font-size:12.5px;color:var(--muted);font-weight:600}
+
+  .block-label{font-size:12.5px;font-weight:800;letter-spacing:.06em;color:var(--muted);margin:22px 4px 10px;text-transform:none}
+  .block-label.due{color:var(--red)}
+
+  .row{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 15px;display:block;cursor:pointer;margin-bottom:10px;transition:border-color .15s,background .15s}
+  .row:active{background:#FCFAF6}
+  .row.duehi{border-color:#F0C9C2;background:#FDF1EF}
+  .av{flex:none;width:40px;height:40px;border-radius:12px;background:var(--tea-soft);display:grid;place-items:center}
+  .row.duehi .av{background:var(--red-soft);color:var(--red)}
+  .who{flex:1;min-width:0}
+  .who .n{display:block;font-weight:800;font-size:15.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .who .n .job{font-size:11px;font-weight:700;color:#fff;background:var(--tea);border-radius:5px;padding:1px 6px;margin-left:7px;vertical-align:2px}
+  .who .n .job.pt{background:var(--sugar)}
+  .pend{font-size:10.5px;font-weight:800;color:#A9701F;background:#FBEFE2;border:1px solid #EAD3B4;border-radius:6px;padding:1px 7px;margin-left:7px;vertical-align:1px}
+  .who .jd{font-weight:600;font-size:12px;color:var(--muted);margin-left:9px;letter-spacing:0}
+  .stat{flex:none;text-align:right;font-size:12px;font-weight:700}
+  .stat .badge{display:inline-block;border-radius:999px;padding:3px 10px;font-size:11.5px}
+  .badge.wait{background:var(--red);color:#fff}
+  .badge.pass{background:#E4F0E6;color:var(--ok)}
+  .badge.fail{background:#F7E4DF;color:var(--bad)}
+  .badge.soon{background:#F1EEE7;color:var(--muted)}
+  .stat .arrow{color:var(--line);font-size:18px;margin-left:6px;vertical-align:-2px}
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
+
+  /* ---- eval form ---- */
+  .ev-head{background:linear-gradient(135deg,var(--tea) 0%,var(--tea-deep) 100%);color:#fff;border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+  .ev-head .n{font-size:22px;font-weight:900}
+  .ev-head .meta{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+  .ev-head .chip{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);border-radius:999px;padding:5px 11px;font-size:12px;font-weight:600}
+
+  .legend{font-size:12px;color:var(--muted);margin:20px 4px 4px;line-height:1.7}
+  .legend b{color:var(--tea-deep)}
+
+  .tea-toggle{display:flex;align-items:center;gap:12px;background:var(--sugar-soft);border:1px solid #EAD3B4;border-radius:14px;padding:13px 15px;margin:14px 0 4px}
+  .tea-toggle .tt{flex:1;font-size:13.5px;font-weight:700;color:#8A5A1C}
+  .switch{position:relative;width:46px;height:26px;flex:none}
+  .switch input{opacity:0;width:0;height:0}
+  .slider{position:absolute;inset:0;background:#D9CBB5;border-radius:999px;transition:.2s;cursor:pointer}
+  .slider::before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+  .switch input:checked + .slider{background:var(--sugar)}
+  .switch input:checked + .slider::before{transform:translateX(20px)}
+
+  .secbar{display:flex;align-items:center;gap:10px;margin:26px 2px 4px}
+  .secbar .sname{font-size:14px;font-weight:900;color:var(--tea-deep);letter-spacing:.14em}
+  .secbar .sline{flex:1;height:1px;background:var(--line)}
+  .secbar .sw{font-size:11px;font-weight:800;color:var(--muted);background:#F6F2EA;border-radius:999px;padding:3px 9px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px;margin-top:12px}
+  .item .ih{display:flex;align-items:center;gap:10px;margin-bottom:11px}
+  .item .ih .ico{flex:none;width:30px;height:30px;border-radius:9px;background:var(--tea-soft);display:grid;place-items:center}
+  .item .ih .ico svg{width:17px;height:17px;fill:none;stroke:var(--tea);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .item .ih .name{font-weight:900;font-size:17px;color:var(--tea);letter-spacing:.02em;flex:1;min-width:0}
+  .item .ih .w{flex:none;font-size:11px;color:var(--muted);font-weight:700;background:#F6F2EA;border-radius:999px;padding:3px 9px}
+  .crit{background:#FAF7F1;border:1px solid #F0EADF;border-left:3px solid var(--tea-soft);border-radius:10px;padding:10px 12px;margin:0 0 12px}
+  .crit-t{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--sugar);margin-bottom:5px}
+  .cline{font-size:12.5px;color:#6E6357;line-height:1.65;margin-top:3px}
+  .cline:first-of-type{margin-top:0}
+  .cline .cl{display:inline-block;font-weight:800;color:var(--tea-deep);margin-right:6px}
+  .bust{width:23px;height:23px;stroke:var(--tea);stroke-width:1.7;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .bust.f{fill:var(--tea);stroke:var(--tea)}
+  .row.duehi .bust{stroke:var(--red)} .row.duehi .bust.f{fill:var(--red);stroke:var(--red)}
+  .row.doneRow{opacity:.72}
+  .row.doneRow .av{background:#EDEAE3}
+  .row.doneRow .bust{stroke:var(--muted)} .row.doneRow .bust.f{fill:var(--muted);stroke:var(--muted)}
+  .badge.legacy{background:#E9E5DC;color:#6E6357}
+  .rtop{display:flex;align-items:center;gap:13px}
+  .chkrow{display:flex;flex-wrap:nowrap;gap:4px;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+  .ci{flex:1 1 0;min-width:0;max-width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9.5px;font-weight:800;color:#9A8F80;background:#F7F3EC;border:1px solid #EFE8DC;border-radius:8px;padding:5px 2px;letter-spacing:0}
+  .ci .lb{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:clip}
+  .ci svg{width:11px;height:11px;flex:none;display:block}
+  .ci .sq{fill:none;stroke:currentColor;stroke-width:2.6}
+  .ci.na{color:#8C8477;background:#F0EDE6;border-color:#E4DED2}
+  .ci.na .xm{stroke:currentColor;stroke-width:3.2;fill:none;stroke-linecap:round}
+  .ci.self{color:#A9701F;background:#FBEFE2;border-color:#EAD3B4}
+  .ci.self .dt2{fill:currentColor;stroke:none}
+  .ci.on{color:#3E7A54;background:#E8F2EA;border-color:#CFE2D3}
+  .ci.on svg{stroke:currentColor;stroke-width:3.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .scale{display:flex;gap:5px}
+  .scale button{flex:1;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--muted);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 2px;transition:all .12s;line-height:1.25}
+  .scale button .lv{display:block;font-size:10px;font-weight:800;color:var(--line);margin-bottom:2px}
+  .scale button.on{background:var(--tea);border-color:var(--tea);color:#fff}
+  .scale button.on .lv{color:#B9CDBE}
+
+  .memo{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px;margin-top:12px}
+  .memo .mh{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .memo .mh .ico{flex:none;width:30px;height:30px;border-radius:9px;background:var(--sugar-soft);display:grid;place-items:center}
+  .memo .mh .ico svg{width:17px;height:17px;fill:none;stroke:var(--sugar);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .memo .mh .name{font-weight:900;font-size:17px;color:var(--tea);letter-spacing:.02em;flex:1}
+  .memo .mh .opt{font-size:11px;color:var(--muted);font-weight:700;background:#F6F2EA;border-radius:999px;padding:3px 9px}
+  .memo textarea{width:100%;min-height:96px;font-family:inherit;font-size:14.5px;line-height:1.7;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:12px 13px;resize:vertical}
+  .memo textarea:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+  .memo .cnt2{text-align:right;font-size:11.5px;color:var(--muted);margin-top:6px;font-weight:700}
+  .rmemo{background:#FAF7F1;border:1px solid #F0EADF;border-left:3px solid var(--sugar-soft);border-radius:12px;padding:13px 15px;margin-top:14px}
+  .rmemo .rt{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--sugar);margin-bottom:5px}
+  .rmemo .rc{font-size:14px;color:#5C5247;line-height:1.75;white-space:pre-wrap}
+  .revnote{text-align:center;font-size:11.5px;color:var(--muted);margin-top:8px}
+  .locked{margin-top:12px;text-align:center;font-size:12.5px;font-weight:700;color:var(--muted);background:#F6F2EA;border:1px solid var(--line);border-radius:14px;padding:14px;line-height:1.7}
+  .btn-clear{width:100%;margin-top:10px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--muted);background:none;border:none;padding:12px;text-decoration:underline;text-underline-offset:3px}
+  .btn-2{width:100%;margin-top:10px;font-family:inherit;font-size:15px;font-weight:800;cursor:pointer;color:var(--tea);background:#fff;border:1.5px solid var(--line);border-radius:14px;padding:14px}
+  .scorebar{position:sticky;bottom:0;margin:22px -18px 0;padding:16px 18px calc(16px + env(safe-area-inset-bottom));background:rgba(251,248,242,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+  .scoreline{display:flex;align-items:center;gap:14px;margin-bottom:12px}
+  .scoreline .big{font-size:34px;font-weight:900;line-height:1;color:var(--tea-deep)}
+  .scoreline .big small{font-size:15px;color:var(--muted);font-weight:700}
+  .scoreline .verdict{font-size:13px;font-weight:800;padding:5px 12px;border-radius:999px}
+  .verdict.pass{background:#E4F0E6;color:var(--ok)}
+  .verdict.fail{background:#F7E4DF;color:var(--bad)}
+  .verdict.na{background:#F1EEE7;color:var(--muted)}
+  .scoreline .left{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600;text-align:right}
+
+  /* result view */
+  .result-banner{border-radius:18px;padding:22px;text-align:center;box-shadow:var(--shadow);margin-bottom:8px}
+  .result-banner.pass{background:linear-gradient(135deg,#3E7A54,#2E5E3F);color:#fff}
+  .result-banner.fail{background:linear-gradient(135deg,#B4472E,#8F351F);color:#fff}
+  .result-banner .rl{font-size:13px;opacity:.85;letter-spacing:.04em}
+  .result-banner .rs{font-size:46px;font-weight:900;line-height:1.1;margin:2px 0}
+  .result-banner .rv{font-size:14px;font-weight:800}
+  .rlist{margin-top:16px}
+  .rsec{font-size:11.5px;font-weight:900;letter-spacing:.14em;color:var(--sugar);padding:12px 2px 4px;border-bottom:1px solid var(--line)}
+  .rrow{display:flex;justify-content:space-between;padding:11px 2px;border-bottom:1px solid var(--line);font-size:14px}
+  .rrow:last-child{border:none}
+  .rrow .rn{font-weight:600}
+  .rrow .rv2{font-weight:800;color:var(--tea)}
+  .rrow .rv2.zero{color:var(--muted)}
+  .rdate{text-align:center;color:var(--muted);font-size:12px;margin-top:16px}
+
+  .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:30px;letter-spacing:.03em}
+  input[type=password]{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;margin-top:6px}
+  input[type=password]:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+  .err{color:#B4472E;font-size:13px;margin:10px 2px 0;display:none}
+  .err.show{display:block}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="eyebrow">HR - CHIYUAN</span>
+    <button class="back" id="back">返回</button>
+  </div>
+
+  <!-- ===== SCREEN 0: ENTRY MENU ===== -->
+  <section id="entry">
+    <h1 class="big">店經理<span class="hl">考核平台</span></h1>
+    <p class="lead">請選擇要進行的考核。</p>
+
+    <div class="menu a" id="goOnboard">
+      <div class="mtop">
+        <span class="mic"><svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg></span>
+        <span class="mt"><span class="mh">新人考核</span><span class="ms">新進人員訓練計劃表</span></span>
+        <span class="mgo">›</span>
+      </div>
+      <div class="mdesc">新人到職滿一個月的單次考核，<b>15 個項目</b>、100 分制。看你門市的待考核名單並評分。</div>
+    </div>
+
+    <a class="menu b" href="skills.html">
+      <div class="mtop">
+        <span class="mic"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 18l-5.2 2.8 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
+        <span class="mt"><span class="mh">技能評核</span><span class="ms">SM 技能盤點・全員・每月更新</span></span>
+        <span class="mgo">›</span>
+      </div>
+      <div class="mdesc">全店員工的技能狀態盤點，<b>27 項技能</b>、五級。做過新人考核的項目會<b>自動帶入</b>，不用重複評。</div>
+    </a>
+
+    <p class="foot">HR - CHIYUAN</p>
+  </section>
+
+  <!-- ===== SCREEN 1: PICK STORE ===== -->
+  <section id="pick">
+    <h1 class="big">新人<span class="hl">考核</span></h1>
+    <p class="lead">選擇你的門市，就能看到店內新人的報到進度與待考核名單。</p>
+    <div class="card">
+      <label class="lab" for="store">你的門市</label>
+      <select id="store">
+        <option value="" disabled selected>選擇門市</option>
+        <optgroup label="北市"><option>小巨蛋店</option><option>師大店</option><option>松江店</option><option>忠孝店</option><option>內湖店</option><option>台北車站店</option><option>大安店</option><option>光華店</option></optgroup>
+        <optgroup label="新北市"><option>頂溪店</option><option>板橋店</option></optgroup>
+        <optgroup label="中區"><option>一中店</option><option>逢甲店</option></optgroup>
+      </select>
+      <div id="pwWrap" style="display:none">
+        <label class="lab" for="pw" style="margin-top:14px">門市密碼</label>
+        <input id="pw" type="password" placeholder="輸入你門市的密碼" autocomplete="off">
+        <div class="err" id="pwErr">密碼錯誤，請再試一次。</div>
+      </div>
+      <p class="hint">未設定密碼的門市為測試模式，可直接進入。</p>
+      <button class="cta" id="enter">進入門市</button>
+    </div>
+    <p class="foot">HR - CHIYUAN</p>
+  </section>
+
+  <!-- ===== SCREEN 2: ROSTER ===== -->
+  <section id="roster">
+    <div class="store-head">
+      <span class="pin">📍</span><span class="nm" id="rStore">—</span>
+      <span class="ct" id="rCount">—</span>
+    </div>
+    <div id="rBody"></div>
+    <p class="foot">此頁只顯示你所屬門市的新進人員。</p>
+  </section>
+
+  <!-- ===== SCREEN 3: EVAL ===== -->
+  <section id="eval"></section>
+</div>
+
+<script src="assets/config.js"></script>
+<script>
+/* ===== 資料層（全部取自 config.js） ===== */
+const H = window.CHIYUAN;
+const ICONS=H.ICONS, ITEMS=H.EVAL_ITEMS, PASS=H.PASS;
+const labelsOf=H.labelsOf, ratioOf=H.ratioOf, activeItems=H.activeItems, effWeights=H.effWeights, score=H.score;
+const ABBR=H.CHECKLIST.ABBR, FULL=H.CHECKLIST.FULL;
+const $=id=>document.getElementById(id);
+
+const BUST = filled => filled
+  ? '<svg viewBox="0 0 24 24" class="bust f"><circle cx="12" cy="8" r="4"/><path d="M4.4 20.4c0-4.2 3.4-6.6 7.6-6.6s7.6 2.4 7.6 6.6z"/></svg>'
+  : '<svg viewBox="0 0 24 24" class="bust"><circle cx="12" cy="8" r="4"/><path d="M4.4 20.4c0-4.2 3.4-6.6 7.6-6.6s7.6 2.4 7.6 6.6"/></svg>';
+
+const liveTicks   = p => H.DataAPI.liveTicks(p);
+const pendingCount= p => H.DataAPI.pendingCount(p);
+const chipsHTML = p => `<div class="chkrow">` + liveTicks(p).map((v,i)=>
+  `<span class="ci ${v==='na'?'na':v==='self'?'self':(v?'on':'')}" title="${FULL[i]}${v==='na'?'（免投保）':v==='self'?'（新人已回報，雲端未登記）':''}"><span class="lb">${ABBR[i]}</span>`+
+  (v==='na'?`<svg viewBox="0 0 24 24"><path class="xm" d="M6 6l12 12M18 6L6 18"/></svg>`
+   : v==='self'?`<svg viewBox="0 0 24 24"><circle class="dt2" cx="12" cy="12" r="5"/></svg>`
+   : v===true?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
+     :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+
+  `</span>`).join('') + `</div>`;
+
+/* ===== 名冊（透過 DataAPI，之後自動改讀雲端） ===== */
+let ROSTER={}, _rosterP=null;
+function loadRoster(){
+  if(_rosterP) return _rosterP;              // 只建一次，避免重複載入
+  _rosterP=(async()=>{
+    const people = await H.DataAPI.getAll();
+    ROSTER={};
+    people.forEach(p=>{
+      const ev = H.DataAPI.loadEval(p);
+      if(ev){ p.eval=ev; p.drinkOn=!!ev.drinkOn; }
+      (ROSTER[p.store]=ROSTER[p.store]||[]).push(p);
+    });
+  })();
+  return _rosterP;
+}
+loadRoster();
+
+/* ===== helpers ===== */
+function fmt(d){return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;}
+function daysSince(d){return Math.floor((Date.now()-d.getTime())/86400000);}
+function initials(n){return n.slice(-2);}
+const EDIT_HOURS = 48;
+const fmtDT = d => `${fmt(d)} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;
+function editDeadline(ev){ return new Date(ev.date.getTime() + EDIT_HOURS*3600*1000); }
+function hoursLeft(ev){ return (editDeadline(ev) - Date.now())/3600000; }
+function canEdit(ev){ return hoursLeft(ev) > 0 || (ev.unlockUntil && ev.unlockUntil > Date.now()); }
+
+/* ===== state ===== */
+let curStore=null, curHire=null, draft={}, draftMemo="";
+
+/* ===== screen 0/1: 選單 + 門市密碼 ===== */
+$('goOnboard').addEventListener('click',()=>{ show('pick'); });
+$('store').addEventListener('change',()=>{
+  const s=$('store').value;
+  const need = !!(H.STORE_PW && H.STORE_PW[s]);
+  $('pwWrap').style.display = need ? 'block':'none';
+  $('pwErr').classList.remove('show'); if($('pw')) $('pw').value='';
+});
+$('enter').addEventListener('click', async ()=>{
+  const s=$('store').value; if(!s) return;
+  const pw = H.STORE_PW && H.STORE_PW[s];
+  if(pw){
+    if($('pw').value !== pw){ $('pwErr').classList.add('show'); return; }
+    $('pwErr').classList.remove('show');
+  }
+  await loadRoster();
+  curStore=s; showRoster();
+});
+$('back').addEventListener('click',()=>{
+  if($('eval').style.display==='block'){ showRoster(); }
+  else if($('roster').style.display==='block'){ curStore=null; show('pick'); }
+  else { show('entry'); }
+});
+function show(name){
+  ['entry','pick','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
+  $('back').style.display = name==='entry' ? 'none':'block';
+  window.scrollTo(0,0);
+}
+
+/* ===== screen 2: roster ===== */
+function showRoster(){
+  show('roster');
+  $('rStore').textContent=curStore;
+  const list=ROSTER[curStore]||[];
+  if(!list.length){ $('rCount').textContent='0 位'; $('rBody').innerHTML='<div class="empty">目前這間門市沒有新進人員。</div>'; return; }
+  const finished = list.filter(h=>h.passed);
+  const active   = list.filter(h=>!h.passed);
+  const due      = active.filter(h=>!h.eval && daysSince(h.join)>=30);
+  $('rCount').textContent=`待考核 ${active.length} 位・已完成 ${finished.length} 位`;
+  let html='';
+  if(due.length){
+    html+=`<div class="block-label due">● 待考核（滿一個月未考核）</div>`;
+    due.forEach(h=>html+=rowHTML(h,true));
+  }
+  const rest = active.filter(h=>!due.includes(h));   // 已列在「待考核」的不重複顯示
+  if(rest.length){
+    html+=`<div class="block-label">未完成新人考核</div>`;
+    [...rest].sort((a,b)=>a.join-b.join).forEach(h=>html+=rowHTML(h,false));
+  }
+  if(finished.length){
+    html+=`<div class="block-label">已完成新人考核（${finished.length}）</div>`;
+    [...finished].sort((a,b)=>a.join-b.join).forEach(h=>html+=rowHTML(h,false));
+  }
+  $('rBody').innerHTML=html;
+  document.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>{
+    curHire=(ROSTER[curStore]||[]).find(h=>h.id===el.dataset.id); openEval();
+  }));
+}
+function statHTML(h){
+  if(h.passed) return `<span class="badge legacy">已完成新人考核</span>`;
+  if(h.eval){
+    const sc=score(h.eval.levels,h.job,h.drinkOn===true);
+    const pass=sc>=PASS;
+    return `<span class="badge ${pass?'pass':'fail'}">${sc} 分・${pass?'通過':'未通過'}</span>`;
+  }
+  if(daysSince(h.join)>=30) return `<span class="badge wait">待考核</span>`;
+  const left=30-daysSince(h.join);
+  return `<span class="badge soon">還有 ${left} 天</span>`;
+}
+function rowHTML(h,hi){
+  return `<div class="row ${hi?'duehi':''} ${h.passed?'doneRow':''}" data-id="${h.id}">
+    <span class="rtop">
+      <span class="av">${BUST(h.passed || !!h.eval)}</span>
+      <span class="who">
+        <span class="n">${h.name}<span class="job ${h.job==='PT'?'pt':''}">${h.job==='PT'?'兼職':'正職'}</span><span class="jd">到職 ${fmt(h.join)}</span>${pendingCount(h)?`<span class="pend">待核對 ${pendingCount(h)}</span>`:''}</span>
+      </span>
+      <span class="stat">${statHTML(h)}<span class="arrow">›</span></span>
+    </span>
+    ${chipsHTML(h)}
+  </div>`;
+}
+
+/* ===== screen 3: eval ===== */
+function openEval(){
+  show('eval');
+  if(curHire.passed && !curHire.eval){ renderLegacy(curHire); return; }
+  if(curHire.eval){ renderResult(curHire, curHire.eval.levels, curHire.eval.date); return; }
+  draft={}; draftMemo="";
+  renderForm(curHire.drinkOn === true);
+}
+function editEval(){
+  if(!canEdit(curHire.eval)){ alert(`已超過 ${EDIT_HOURS} 小時修改期限，此考核已鎖定。如需更正請聯繫人資。`); return; }
+  draft={...curHire.eval.levels};
+  draftMemo=curHire.eval.memo||"";
+  renderForm(curHire.drinkOn === true);
+}
+function renderForm(drinkOn){
+  const h=curHire;
+  let itemsHTML="";
+  const EW = effWeights(h.job,drinkOn);
+  let curSec = "";
+  activeItems(h.job,drinkOn).forEach(it=>{
+    if(it.sec && it.sec!==curSec){
+      curSec = it.sec;
+      const tot = activeItems(h.job,drinkOn).filter(x=>x.sec===curSec).reduce((a,x)=>a+EW[x.key],0);
+      itemsHTML += `<div class="secbar"><span class="sname">${curSec}</span><span class="sline"></span><span class="sw">共 ${tot} 分</span></div>`;
+    }
+    const descHTML = (it.desc||[]).map(d=>
+      typeof d==='string'
+        ? `<div class="cline">${d}</div>`
+        : `<div class="cline"><span class="cl">${d.l}</span>${d.t}</div>`
+    ).join('');
+    itemsHTML+=`<div class="item" data-key="${it.key}">
+      <div class="ih">
+        <span class="ico"><svg viewBox="0 0 24 24">${ICONS[it.icon]||''}</svg></span>
+        <span class="name">${it.name}</span>
+        <span class="w">配分 ${EW[it.key]}</span>
+      </div>
+      ${descHTML?`<div class="crit"><div class="crit-t">評核標準</div>${descHTML}</div>`:''}
+      <div class="scale">${labelsOf(it).map((lb,i)=>`<button data-lv="${i}"><span class="lv">${i+1}</span>${lb}</button>`).join('')}</div>
+    </div>`;
+  });
+  $('eval').innerHTML=`
+    <div class="ev-head">
+      <div class="n">${h.name}</div>
+      <div class="meta">
+        <span class="chip">📍 ${curStore}</span>
+        <span class="chip">${h.job==='PT'?'兼職':'正職'}</span>
+        <span class="chip">到職 ${fmt(h.join)}</span>
+        <span class="chip">滿月 ${fmt(new Date(h.join.getFullYear(),h.join.getMonth()+1,h.join.getDate()))}</span>
+      </div>
+    </div>
+    <div class="legend">依現場實測，每項選一個等級（用語依項目而異）：<b>1</b> 尚未達標　<b>2</b> 需人協助　<b>3</b> 已可獨立（新人達標）　<b>4</b> 表現穩定　<b>5</b> 表現優異</div>
+    <div class="tea-toggle">
+      <span class="tt">這位新人要學製作飲品嗎？</span>
+      <label class="switch"><input type="checkbox" id="drinkSw" ${drinkOn?'checked':''}><span class="slider"></span></label>
+    </div>
+    <div id="items">${itemsHTML}</div>
+    <div class="memo">
+      <div class="mh">
+        <span class="ico"><svg viewBox="0 0 24 24"><path d="M4.5 5.4h15v10.2h-8.4L6.6 19.4v-3.8H4.5z"/><path d="M8.2 9h7.6M8.2 12.2h5"/></svg></span>
+        <span class="name">總結評語</span><span class="opt">選填</span>
+      </div>
+      <textarea id="memo" placeholder="整體表現、需加強的地方、後續訓練建議⋯">${(draftMemo||'')}</textarea>
+      <div class="cnt2" id="memoCnt">0 字</div>
+    </div>
+    <div class="scorebar">
+      <div class="scoreline">
+        <span class="big" id="scoreNum">—<small>/100</small></span>
+        <span class="verdict na" id="verdict">未完成</span>
+        <span class="left" id="leftNote"></span>
+      </div>
+      <button class="cta" id="submitEval" disabled>送出考核</button>
+    </div>`;
+  $('items').querySelectorAll('.item').forEach(item=>{
+    item.querySelectorAll('.scale button').forEach(btn=>{
+      btn.addEventListener('click',()=>{
+        const wasOn=btn.classList.contains('on');
+        item.querySelectorAll('.scale button').forEach(b=>b.classList.remove('on'));
+        if(wasOn){ delete draft[item.dataset.key]; }
+        else { btn.classList.add('on'); draft[item.dataset.key]=parseInt(btn.dataset.lv); }
+        recompute(drinkOn);
+      });
+    });
+  });
+  $('items').querySelectorAll('.item').forEach(item=>{
+    const lv=draft[item.dataset.key];
+    if(lv!=null){ const b=item.querySelector(`.scale button[data-lv="${lv}"]`); if(b) b.classList.add('on'); }
+  });
+  const memoEl=$('memo');
+  const upCnt=()=>{ draftMemo=memoEl.value; $('memoCnt').textContent=`${memoEl.value.length} 字`; };
+  memoEl.addEventListener('input',upCnt); upCnt();
+  $('drinkSw').addEventListener('change',e=>{
+    if(!e.target.checked){ delete draft.drink; delete draft.drinkmix; }
+    renderForm(e.target.checked);
+  });
+  $('submitEval').addEventListener('click',()=>submitEval(drinkOn));
+  recompute(drinkOn);
+}
+function recompute(drinkOn){
+  const act=activeItems(curHire.job,drinkOn);
+  const done=act.filter(it=>draft[it.key]!=null).length;
+  const total=act.length;
+  const sc=score(draft,curHire.job,drinkOn);
+  const allDone=done===total;
+  $('scoreNum').innerHTML = done? `${sc}<small>/100</small>` : `—<small>/100</small>`;
+  const v=$('verdict'), left=$('leftNote'), btn=$('submitEval');
+  if(!allDone){
+    v.className='verdict na'; v.textContent='未完成';
+    left.textContent=`還有 ${total-done} 項未評`;
+    btn.disabled=true;
+  }else{
+    const pass=sc>=PASS;
+    v.className='verdict '+(pass?'pass':'fail');
+    v.textContent=pass?'通過':'未達 '+PASS;
+    if(pass){
+      left.textContent='';
+      btn.disabled=false; btn.textContent='送出考核';
+    }else{
+      // 不合格無法送出：需持續培訓，之後再登入重新評核，合格才送出
+      left.textContent=`未達 ${PASS} 分，請持續培訓後再考核`;
+      btn.disabled=true; btn.textContent='合格才能送出';
+    }
+  }
+}
+function submitEval(drinkOn){
+  const prev=curHire.eval;
+  curHire.drinkOn=drinkOn;
+  curHire.eval={
+    date: prev ? prev.date : new Date(),
+    levels:{...draft}, memo:(draftMemo||"").trim(),
+    revs: prev ? (prev.revs||0)+1 : 0,
+    updated: prev ? new Date() : null
+  };
+  H.DataAPI.saveEval(curHire, curHire.eval);
+  renderResult(curHire, curHire.eval.levels, curHire.eval.date);
+}
+function clearEval(h){
+  h.eval=null; h.drinkOn=false;
+  H.DataAPI.clearEval(h);
+}
+function renderLegacy(h){
+  $('eval').innerHTML=`
+    <div class="ev-head">
+      <div class="n">${h.name}</div>
+      <div class="meta">
+        <span class="chip">📍 ${curStore}</span>
+        <span class="chip">${h.job==='PT'?'兼職':'正職'}</span>
+        <span class="chip">到職 ${fmt(h.join)}</span>
+      </div>
+    </div>
+    <div class="locked" style="margin-top:16px">✓ 這位夥伴已完成新人考核（通過試用期），紀錄於營運部大表。<br>此處無線上評分明細。</div>
+    <button class="cta" id="toRoster" style="margin-top:18px">返回門市列表</button>`;
+  $('toRoster').addEventListener('click',showRoster);
+}
+function renderResult(h,levels,date){
+  show('eval');
+  const open_ = h.eval ? canEdit(h.eval) : false;
+  const left  = h.eval ? Math.max(0,Math.ceil(hoursLeft(h.eval))) : 0;
+  const drinkOn = h.drinkOn === true;
+  const sc=score(levels,h.job,drinkOn);
+  const pass=sc>=PASS;
+  let sec="";
+  const rows=activeItems(h.job,drinkOn).map(it=>{
+    const lv=levels[it.key];
+    const nm=lv!=null?labelsOf(it)[lv]:'—';
+    let head="";
+    if(it.sec && it.sec!==sec){ sec=it.sec; head=`<div class="rsec">${sec}</div>`; }
+    return head+`<div class="rrow"><span class="rn">${it.name}</span><span class="rv2 ${lv===0?'zero':''}">${nm}</span></div>`;
+  }).join('');
+  $('eval').innerHTML=`
+    <div class="result-banner ${pass?'pass':'fail'}">
+      <div class="rl">${h.name}・訓練計劃表考核</div>
+      <div class="rs">${sc}<span style="font-size:20px">/100</span></div>
+      <div class="rv">${pass?'✓ 通過':'✕ 未通過（未達 '+PASS+'）'}</div>
+    </div>
+    <div class="card rlist">${rows}</div>
+    ${h.eval && h.eval.memo ? `<div class="rmemo"><div class="rt">總結評語</div><div class="rc">${h.eval.memo}</div></div>` : ''}
+    <div class="rdate">考核日 ${fmtDT(date)}・人資與該員可查看</div>
+    ${h.eval && h.eval.revs ? `<div class="revnote">已修改 ${h.eval.revs} 次・最後修改 ${fmtDT(h.eval.updated)}</div>` : ''}
+    ${open_ ? `<div class="revnote">可自行修改至 ${fmtDT(editDeadline(h.eval))}（剩約 ${left} 小時）</div>` : ''}
+    <button class="cta" id="toRoster" style="margin-top:18px">返回門市列表</button>
+    ${open_
+      ? `<button class="btn-2" id="reEval">修改這份考核</button>`
+      : `<div class="locked">🔒 已超過 ${EDIT_HOURS} 小時修改期限，考核已鎖定。<br>如需更正請聯繫人資。</div>`}
+    <button class="btn-clear" id="clearEval">清除這筆考核，回到未考核狀態（測試用）</button>`;
+  $('toRoster').addEventListener('click',showRoster);
+  if(open_) $('reEval').addEventListener('click',editEval);
+  $('clearEval').addEventListener('click',()=>{
+    if(!confirm(`確定要清除「${h.name}」的考核紀錄嗎？此人會回到未考核狀態。`)) return;
+    clearEval(h); showRoster();
+  });
+}
+</script>
+</body>
+</html>

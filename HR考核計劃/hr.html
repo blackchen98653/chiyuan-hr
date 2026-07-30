@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>HR 總覽 · CHIYUAN TEA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F2;--card:#FFFFFF;--ink:#2A2320;--muted:#8A7E6F;
+    --tea:#34503F;--tea-deep:#263B2E;--tea-soft:#E9EFE9;
+    --sugar:#BE7E33;--sugar-soft:#F6ECDC;--pearl:#39291E;
+    --line:#EBE3D6;--ok:#4C8A5C;--warn:#C4611F;--bad:#B4472E;--red:#C0392B;--red-soft:#FBE3DF;
+    --shadow:0 6px 24px rgba(48,38,26,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:760px;margin:0 auto;padding:0 18px 64px}
+
+  .top{padding:28px 4px 10px}
+  .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--sugar);text-transform:uppercase;font-weight:800}
+  h1.big{font-size:26px;font-weight:900;margin:4px 0 6px;line-height:1.3}
+  h1.big .hl{color:var(--tea)}
+  .lead{margin:0 0 18px;color:var(--muted);font-size:14px}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
+  @media(max-width:560px){.stats{grid-template-columns:repeat(2,1fr)}}
+  .stat{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:15px 14px;box-shadow:var(--shadow)}
+  .stat .num{font-size:26px;font-weight:900;color:var(--tea-deep);line-height:1}
+  .stat .lb{font-size:12px;color:var(--muted);font-weight:700;margin-top:6px}
+  .stat.due .num{color:var(--red)}
+  .stat.done .num{color:var(--ok)}
+
+  .storebtns{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .storebtns button{font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--muted);background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:9px 15px;transition:all .12s}
+  .storebtns button:hover{border-color:#DCD3C3}
+  .storebtns button.on{background:var(--tea);border-color:var(--tea);color:#fff}
+  .ctrl{margin-bottom:14px}
+  .ctrl input{width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px}
+  .ctrl input:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+
+  .store-head{display:flex;align-items:center;gap:10px;margin:22px 2px 10px}
+  .store-head .nm{font-size:17px;font-weight:900;color:var(--tea-deep)}
+  .store-head .ct{margin-left:auto;font-size:12px;color:var(--muted);font-weight:600}
+
+  .row{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px 15px;margin-bottom:10px}
+  .rtop{display:flex;align-items:center;gap:12px}
+  .av{flex:none;width:38px;height:38px;border-radius:11px;background:var(--tea-soft);display:grid;place-items:center;font-weight:800;color:var(--tea);font-size:15px}
+  .who{flex:1;min-width:0}
+  .who .n{display:block;font-weight:800;font-size:15.5px}
+  .rolepill{display:inline-block;font-size:10.5px;font-weight:800;border-radius:6px;padding:1px 7px;margin-left:7px;vertical-align:1px}
+  .rp-sm{background:#FBE3DF;color:var(--red)} .rp-rsv{background:#F3E9DB;color:#8B5A2B}
+  .rp-ft{background:#E4ECF7;color:#2E6FD8} .rp-pt{background:#E7F1EA;color:var(--ok)}
+  .who .jd{font-size:12px;color:var(--muted);margin-top:2px;display:block}
+  .who .jd .pin{color:var(--tea)}
+  .kpi{flex:none;text-align:right}
+  .kpi .pc{font-size:17px;font-weight:900;line-height:1}
+  .kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+  /* 技能 27 格 */
+  .skdots{display:flex;gap:3px;flex-wrap:wrap;margin-top:11px}
+  .skd{width:100%;max-width:11px;height:11px;flex:1 1 11px;border-radius:3px;background:var(--line)}
+  .sk-none{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:normal}
+
+  /* 班別 */
+  .shifts{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
+  .shifts .slab{font-size:11.5px;color:var(--muted);font-weight:700}
+  .sh{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;border-radius:999px;padding:4px 11px;border:1.5px solid var(--line);color:var(--muted);background:#fff}
+  .sh.on.mor{background:#FFF6E3;border-color:#EAD3A0;color:#A9701F}
+  .sh.on.mid{background:#E7EEFA;border-color:#BFD0EE;color:#2E6FD8}
+  .sh.on.nig{background:#EEE9F7;border-color:#D2C6EC;color:#6E4FB0}
+
+  /* checklist chips + 新考 */
+  .chkrow{display:flex;flex-wrap:wrap;gap:4px;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
+  .ci{min-width:50px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:800;color:#9A8F80;background:#F7F3EC;border:1px solid #EFE8DC;border-radius:8px;padding:5px 6px}
+  .ci svg{width:11px;height:11px;flex:none}
+  .ci .sq{fill:none;stroke:currentColor;stroke-width:2.6}
+  .ci.na{color:#8C8477;background:#F0EDE6;border-color:#E4DED2}
+  .ci.na .xm{stroke:currentColor;stroke-width:3.2;fill:none;stroke-linecap:round}
+  .ci.self{color:#A9701F;background:#FBEFE2;border-color:#EAD3B4}
+  .ci.self .dt2{fill:currentColor;stroke:none}
+  .ci.on{color:#3E7A54;background:#E8F2EA;border-color:#CFE2D3}
+  .ci.on svg{stroke:currentColor;stroke-width:3.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .ci.nk{border-style:solid}
+  .ci.nk.pass{color:#fff;background:var(--tea);border-color:var(--tea)}
+  .ci.nk.wait{color:var(--red);background:var(--red-soft);border-color:#F0C9C2}
+
+  .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
+  .legend{font-size:11.5px;color:var(--muted);margin:6px 2px 14px;line-height:1.9}
+  .legend .k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 8px}
+  .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:30px;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <span class="eyebrow">HR - CHIYUAN</span>
+    <h1 class="big">人力<span class="hl">總覽</span></h1>
+    <p class="lead">各門市每位夥伴的技能覆蓋、偏好班別；新人另顯示報到進度與新人考核狀態。</p>
+  </div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="storebtns" id="fStore"></div>
+  <div class="ctrl"><input id="fName" type="text" placeholder="搜尋姓名…"></div>
+
+  <div class="legend" id="legend"></div>
+  <div id="body"></div>
+  <p class="foot">技能與班別來自「技能評核」；報到與新考來自雲端名冊。<br>HR - CHIYUAN</p>
+</div>
+
+<script src="assets/config.js"></script>
+<script>
+const H = window.CHIYUAN;
+const SK = H.SKILLS;
+const $=id=>document.getElementById(id);
+const ABBR=H.CHECKLIST.ABBR, FULL=H.CHECKLIST.FULL;
+const LV=SK.LEVELS, ORDER=SK.LEVEL_ORDER, KEYS=SK.ALL_KEYS;
+
+function fmt(d){return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;}
+function daysSince(d){return Math.floor((Date.now()-d.getTime())/86400000);}
+function shortRole(r){ r=r||''; if(/^店經理$/.test(r))return['店經理','rp-sm']; if(/儲備/.test(r))return['儲備','rp-rsv']; if(/正職/.test(r))return['正職','rp-ft']; return['兼職','rp-pt']; }
+function covColor(pct){ if(pct>=80)return'#16A76A'; if(pct>=50)return'#2E6FD8'; if(pct>=25)return'#C88B00'; return'#C0392B'; }
+// 名冊有「留停松江」「病假板橋」等前綴 → 正規化回原門市 + 狀態標記，HR 才不漏看
+function storeInfo(raw){
+  for(const p of ['留停','病假','育嬰','留職停薪']){
+    if(raw.startsWith(p)){ const rest=raw.slice(p.length);
+      const full=SK.EVALUABLE_STORES.find(s=>s.startsWith(rest)||s.indexOf(rest)>=0);
+      return {store:full||raw, tag:p}; }
+  }
+  return {store:raw, tag:''};
+}
+
+let PEOPLE=[], STAFF=[], curStore='';
+async function init(){
+  PEOPLE = await H.DataAPI.getAll();
+  PEOPLE.forEach(p=>{ const e=H.DataAPI.loadEval(p); if(e){ p.eval=e; p.drinkOn=!!e.drinkOn; } });
+  STAFF = SK.EMPLOYEES.map(e=>{ const si=storeInfo(e.store); return Object.assign({}, e, {store:si.store, leave:si.tag}); });
+
+  const wrap=$('fStore');
+  const mk=(v,l)=>{ const b=document.createElement('button'); b.dataset.v=v; b.textContent=l; if(v===curStore)b.classList.add('on'); wrap.appendChild(b); };
+  mk('','全部門市');
+  SK.EVALUABLE_STORES.forEach(s=>mk(s,s));
+  wrap.addEventListener('click',e=>{
+    const b=e.target.closest('button'); if(!b) return;
+    curStore=b.dataset.v;
+    [...wrap.children].forEach(x=>x.classList.toggle('on', x.dataset.v===curStore));
+    render();
+  });
+  $('fName').addEventListener('input',render);
+
+  $('legend').innerHTML = '技能等級：'+ORDER.map(k=>`<span class="k" style="background:${LV[k].color}"></span>${LV[k].label}`).join('');
+  render();
+}
+
+// 新人名冊比對（用姓名+門市），拿得到才有 checklist / 新考
+function newbieOf(emp){ return PEOPLE.find(p=>p.name===emp.name && p.store===emp.store) || null; }
+function isPassed(nb){ if(!nb) return null; if(nb.passed) return true; const e=nb.eval; if(e){ return H.score(e.levels,nb.job,nb.drinkOn===true)>=H.PASS; } return false; }
+
+function skdotsHTML(empId){
+  const cov=H.DataAPI.skillCoverage(empId);
+  if(cov.done===0) return {html:`<div class="sk-none">技能尚未評核</div>`, cov};
+  let dots='';
+  KEYS.forEach(k=>{ const v=cov.evals[k]; const bg=(v&&LV[v])?LV[v].color:''; dots+=`<span class="skd" style="${bg?'background:'+bg:''}"></span>`; });
+  return {html:`<div class="skdots">${dots}</div>`, cov};
+}
+function shiftsHTML(empId){
+  const sh=H.DataAPI.shiftOf(empId);
+  const conf=[['morning','☀️ 早','mor'],['mid','⛅ 中','mid'],['night','🌙 晚','nig']];
+  const any=conf.some(c=>sh[c[0]]);
+  return `<div class="shifts"><span class="slab">班別</span>`+
+    conf.map(c=>`<span class="sh ${c[2]} ${sh[c[0]]?'on':''}">${c[1]}</span>`).join('')+
+    (any?'':`<span class="slab" style="margin-left:2px">尚未設定</span>`)+`</div>`;
+}
+function chipsHTML(nb){
+  const live=H.DataAPI.liveTicks(nb);
+  let chips=live.map((v,i)=>
+    `<span class="ci ${v==='na'?'na':v==='self'?'self':(v?'on':'')}" title="${FULL[i]}"><span class="lb">${ABBR[i]}</span>`+
+    (v==='na'?`<svg viewBox="0 0 24 24"><path class="xm" d="M6 6l12 12M18 6L6 18"/></svg>`
+     : v==='self'?`<svg viewBox="0 0 24 24"><circle class="dt2" cx="12" cy="12" r="5"/></svg>`
+     : v===true?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
+       :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+
+    `</span>`).join('');
+  // 後方新增「新考」= 新人考核是否通過
+  const pass=isPassed(nb);
+  chips += `<span class="ci nk ${pass?'pass':'wait'}" title="新人考核${pass?'已通過':'尚未通過'}"><span class="lb">新考</span>`+
+    (pass?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
+        :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+`</span>`;
+  return `<div class="chkrow">${chips}</div>`;
+}
+
+function rowHTML(emp){
+  const [rl,rc]=shortRole(emp.role);
+  const {html:dots,cov}=skdotsHTML(emp.id);
+  const nb=newbieOf(emp);
+  const av=emp.name?emp.name[emp.name.length-1]:'?';
+  return `<div class="row">
+    <div class="rtop">
+      <span class="av">${av}</span>
+      <span class="who">
+        <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}</span>
+        <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?'　到職 '+fmt(nb.join):''}</span>
+      </span>
+      <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/27</div></span>
+    </div>
+    ${dots}
+    ${shiftsHTML(emp.id)}
+    ${nb?chipsHTML(nb):''}
+  </div>`;
+}
+
+function render(){
+  const fn=$('fName').value.trim();
+  let list=STAFF.slice();
+  if(curStore) list=list.filter(e=>e.store===curStore);
+  if(fn) list=list.filter(e=>e.name.includes(fn));
+
+  // 統計（依目前門市篩選，不受姓名搜尋影響）
+  let base=STAFF.slice(); if(curStore) base=base.filter(e=>e.store===curStore);
+  const evaled=base.filter(e=>H.DataAPI.skillCoverage(e.id).done>0).length;
+  const avg=base.length?Math.round(base.reduce((s,e)=>s+H.DataAPI.skillCoverage(e.id).pct,0)/base.length):0;
+  const newbies=base.filter(e=>newbieOf(e)).length;
+  const stores=curStore?1:new Set(base.map(e=>e.store)).size;
+  $('stats').innerHTML=`
+    <div class="stat"><div class="num">${base.length}</div><div class="lb">在職夥伴</div></div>
+    <div class="stat done"><div class="num">${evaled}</div><div class="lb">已評核技能</div></div>
+    <div class="stat"><div class="num">${avg}%</div><div class="lb">平均技能覆蓋</div></div>
+    <div class="stat"><div class="num">${curStore?newbies:stores}</div><div class="lb">${curStore?'新人數':'涵蓋門市'}</div></div>`;
+
+  if(!list.length){ $('body').innerHTML='<div class="empty">沒有符合條件的夥伴。</div>'; return; }
+
+  const rolePri=e=>{const r=e.role||'';return /^店經理$/.test(r)?0:/儲備/.test(r)?1:/正職/.test(r)?2:3;};
+  const sortFn=(a,b)=>{const d=rolePri(a)-rolePri(b);return d||(a.id||'').localeCompare(b.id||'');};
+
+  let html='';
+  if(curStore){
+    list.sort(sortFn);
+    html=list.map(rowHTML).join('');
+  }else{
+    // 全部門市：依門市分組
+    SK.EVALUABLE_STORES.forEach(store=>{
+      const grp=list.filter(e=>e.store===store).sort(sortFn);
+      if(!grp.length) return;
+      const gn=grp.filter(e=>newbieOf(e)).length;
+      html+=`<div class="store-head"><span class="nm">📍 ${store}</span><span class="ct">${grp.length} 人${gn?'・新人 '+gn:''}</span></div>`;
+      html+=grp.map(rowHTML).join('');
+    });
+  }
+  $('body').innerHTML=html;
+}
+
+init();
+</script>
+</body>
+</html>

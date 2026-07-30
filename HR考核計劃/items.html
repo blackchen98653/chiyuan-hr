@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>新人考核項目說明 · CHIYUAN TEA</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#FBF8F2;--card:#FFFFFF;--ink:#2A2320;--muted:#8A7E6F;
+    --tea:#34503F;--tea-deep:#263B2E;--tea-soft:#E9EFE9;
+    --sugar:#BE7E33;--sugar-soft:#F6ECDC;--pearl:#39291E;
+    --line:#EBE3D6;--ok:#4C8A5C;
+    --shadow:0 6px 24px rgba(48,38,26,.08);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:520px;margin:0 auto;padding:0 18px 70px}
+
+  .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--sugar);text-transform:uppercase;font-weight:800;padding:28px 2px 6px;display:block}
+  h1.big{font-size:26px;font-weight:900;margin:2px 2px 8px;line-height:1.3}
+  h1.big .hl{color:var(--tea)}
+  .lead{margin:0 2px 20px;color:var(--muted);font-size:14px}
+
+  /* how it works */
+  .how{background:linear-gradient(135deg,var(--tea) 0%,var(--tea-deep) 100%);color:#fff;border-radius:20px;padding:20px;box-shadow:var(--shadow)}
+  .how h2{font-size:15px;font-weight:900;margin:0 0 12px;letter-spacing:.04em}
+  .how .kv{display:flex;gap:10px;padding:7px 0;font-size:13.5px;border-bottom:1px solid rgba(255,255,255,.14)}
+  .how .kv:last-child{border:none}
+  .how .kv b{flex:none;width:74px;color:#CFE0D2;font-weight:700}
+  .how .kv span{flex:1}
+
+  /* level ladder */
+  .ladder{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-top:16px}
+  .ladder h2{font-size:15px;font-weight:900;margin:0 0 4px}
+  .ladder p{margin:0 0 12px;font-size:12.5px;color:var(--muted)}
+  .lrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F3EEE5;font-size:13.5px}
+  .lrow:last-child{border:none}
+  .lnum{flex:none;width:22px;height:22px;border-radius:7px;background:var(--tea-soft);color:var(--tea);display:grid;place-items:center;font-size:11.5px;font-weight:900}
+  .lrow .lt{flex:1;font-weight:700}
+  .lrow .lp{flex:none;font-size:12px;font-weight:800;color:var(--muted)}
+  .lrow.pass{background:#F4FAF5;border-radius:10px;padding-left:8px;padding-right:8px}
+  .lrow.pass .lt{color:var(--tea)}
+  .passnote{margin-top:12px;background:var(--sugar-soft);border-radius:12px;padding:11px 13px;font-size:12.5px;color:#8A5A1C;font-weight:700;line-height:1.6}
+
+  /* sections + items */
+  .secbar{display:flex;align-items:center;gap:10px;margin:30px 2px 8px}
+  .secbar .sname{font-size:15px;font-weight:900;color:var(--tea-deep);letter-spacing:.14em}
+  .secbar .sline{flex:1;height:1px;background:var(--line)}
+  .secbar .sw{font-size:11px;font-weight:800;color:var(--muted);background:#F6F2EA;border-radius:999px;padding:3px 9px}
+
+  .item{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:15px;margin-top:11px}
+  .ih{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+  .ih .ico{flex:none;width:30px;height:30px;border-radius:9px;background:var(--tea-soft);display:grid;place-items:center}
+  .ih .ico svg{width:17px;height:17px;fill:none;stroke:var(--tea);stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .ih .name{flex:1;font-weight:900;font-size:17px;color:var(--tea);letter-spacing:.02em;min-width:0}
+  .ih .w{flex:none;font-size:11px;color:var(--muted);font-weight:700;background:#F6F2EA;border-radius:999px;padding:3px 9px}
+  .tagft{display:inline-block;font-size:10.5px;font-weight:800;color:#fff;background:var(--sugar);border-radius:5px;padding:1px 6px;margin-left:6px;vertical-align:2px}
+  .crit{background:#FAF7F1;border:1px solid #F0EADF;border-left:3px solid var(--tea-soft);border-radius:10px;padding:10px 12px}
+  .crit-t{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--sugar);margin-bottom:5px}
+  .cline{font-size:12.5px;color:#6E6357;line-height:1.65;margin-top:4px}
+  .cline:first-of-type{margin-top:0}
+  .cline .cl{display:inline-block;font-weight:800;color:var(--tea-deep);margin-right:6px}
+  .lvs{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+  .lvs span{font-size:10.5px;font-weight:700;color:var(--muted);background:#F7F3EC;border:1px solid #EFE8DC;border-radius:7px;padding:3px 8px}
+  .lvs span.top{background:var(--tea-soft);border-color:#CFE2D3;color:var(--tea)}
+
+  .look{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:var(--shadow);margin-bottom:16px}
+  .look h2{font-size:15px;font-weight:900;margin:0 0 4px}
+  .look p.lp{margin:0 0 13px;font-size:12.5px;color:var(--muted)}
+  .look label{display:block;font-size:12.5px;font-weight:700;color:var(--tea-deep);margin:0 0 6px}
+  .look select,.look input{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:11px;padding:12px 13px;appearance:none;margin-bottom:11px}
+  .look select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2334503F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 13px center;padding-right:38px}
+  .look select:focus,.look input:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+  .look button{width:100%;font-family:inherit;font-size:15.5px;font-weight:800;cursor:pointer;color:#fff;background:var(--tea);border:none;border-radius:12px;padding:14px;box-shadow:0 5px 14px rgba(52,80,63,.25)}
+  .sbanner{border-radius:16px;padding:18px;text-align:center;color:#fff;margin-top:14px}
+  .sbanner.pass{background:linear-gradient(135deg,#3E7A54,#2E5E3F)}
+  .sbanner.fail{background:linear-gradient(135deg,#B4472E,#8F351F)}
+  .sbanner .sl{font-size:12px;opacity:.88}
+  .sbanner .ss{font-size:42px;font-weight:900;line-height:1.1;margin:2px 0}
+  .sbanner .ss small{font-size:17px;font-weight:800;opacity:.8}
+  .sbanner .sv{font-size:13.5px;font-weight:800}
+  .esec2{font-size:10.5px;font-weight:900;letter-spacing:.14em;color:var(--sugar);margin:12px 0 4px}
+  .erow2{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #F3EEE5;font-size:13.5px}
+  .erow2:last-child{border:none}
+  .erow2 .en{flex:1;font-weight:700}
+  .erow2 .elv{flex:none;font-size:11.5px;font-weight:800;border-radius:999px;padding:3px 10px;background:#F1EEE7;color:var(--muted)}
+  .elv.hi{background:#E4F0E6;color:var(--ok)} .elv.ok{background:#EAF1EC;color:#4E7A5C}
+  .elv.low{background:#FBEFE2;color:#A9701F} .elv.zero{background:#F7E4DF;color:#B4472E}
+  .memo2{background:#FAF7F1;border:1px solid #F0EADF;border-left:3px solid var(--sugar-soft);border-radius:12px;padding:11px 13px;margin-top:12px}
+  .memo2 .mt2{font-size:10.5px;font-weight:800;letter-spacing:.12em;color:var(--sugar);margin-bottom:4px}
+  .memo2 .mc2{font-size:13.5px;color:#5C5247;line-height:1.7;white-space:pre-wrap}
+  .none2{margin-top:14px;background:#F7F3EC;border:1px dashed var(--line);border-radius:14px;padding:18px;text-align:center;color:var(--muted);font-size:13px;line-height:1.8}
+  .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:34px;letter-spacing:.03em}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <span class="eyebrow">HR - CHIYUAN</span>
+  <h1 class="big">新人<span class="hl">考核項目說明</span></h1>
+  <p class="lead">這是店經理考核你時會看的項目與標準，請先了解、提早準備。考核成績請向店經理詢問。</p>
+
+  <div class="how">
+    <h2>考核怎麼進行</h2>
+    <div class="kv"><b>誰來考</b><span>所屬門市的店經理</span></div>
+    <div class="kv"><b>什麼時候</b><span>到職滿一個月提示，最晚三個月內完成</span></div>
+    <div class="kv"><b>怎麼考</b><span>現場實作測試，店經理依實際表現逐項評等級</span></div>
+    <div class="kv"><b>結果</b><span>總分 100 分，<b>70 分</b>以上通過；成績你本人和人資都看得到</span></div>
+  </div>
+
+  <div class="ladder">
+    <h2>五個等級怎麼算分</h2>
+    <p>每項都有配分，等級決定你拿到該項配分的幾成。</p>
+    <div class="lrow"><span class="lnum">1</span><span class="lt">尚未達標</span><span class="lp">0%</span></div>
+    <div class="lrow"><span class="lnum">2</span><span class="lt">需人協助</span><span class="lp">40%</span></div>
+    <div class="lrow pass"><span class="lnum">3</span><span class="lt">已可獨立　←　新人達標線</span><span class="lp">75%</span></div>
+    <div class="lrow"><span class="lnum">4</span><span class="lt">表現穩定</span><span class="lp">90%</span></div>
+    <div class="lrow"><span class="lnum">5</span><span class="lt">表現優異</span><span class="lp">100%</span></div>
+    <div class="passnote">每一項都做到「可獨立」，總分就是 75 分，已經超過 70 分的及格線。所以目標很明確：先把每一項練到能自己獨立完成。</div>
+  </div>
+
+  <div id="body"></div>
+
+  <p class="foot">實際用語依項目略有不同，詳見各項目下方的等級標示。<br>HR - CHIYUAN</p>
+</div>
+
+<script>
+const ICONS = {
+  attire:'<path d="M8.5 4 12 6.6 15.5 4 20 6.6V11h-2.6v9H6.6v-9H4V6.6z"/>',
+  attitude:'<circle cx="12" cy="12" r="8.5"/><path d="M8.4 14.2s1.3 1.7 3.6 1.7 3.6-1.7 3.6-1.7"/><path d="M9.2 9.6h.01M14.8 9.6h.01"/>',
+  counter:'<rect x="3.2" y="7.5" width="17.6" height="12.5" rx="2.2"/><path d="M7.5 7.5V5.6a2 2 0 0 1 2-2h5a2 2 0 0 1 2 2v1.9"/><path d="M7.6 12.2h8.8M7.6 16h5.4"/>',
+  phrases:'<path d="M20.5 11.6a6.6 6.6 0 0 1-6.6 6.6H8.6L4.2 21.4v-5.1a6.6 6.6 0 0 1 4.4-11.5h5.3a6.6 6.6 0 0 1 6.6 6.8z"/><path d="M8.6 10h7M8.6 13.4h4.6"/>',
+  product:'<path d="M11.4 3.8H4.4v7l9.4 9.4 7-7z"/><circle cx="8.1" cy="8.1" r="1.3"/>',
+  complaint:'<path d="M4.6 14.2v-2a7.4 7.4 0 0 1 14.8 0v2"/><rect x="2.9" y="13.4" width="3.7" height="5.5" rx="1.6"/><rect x="17.4" y="13.4" width="3.7" height="5.5" rx="1.6"/>',
+  delivery:'<path d="M5.4 8.4h13.2l-1 11.2a2 2 0 0 1-2 1.8H8.4a2 2 0 0 1-2-1.8z"/><path d="M9 8.4V6.6a3 3 0 0 1 6 0v1.8"/><path d="M9.6 12.6h4.8"/>',
+  prep:'<path d="M3.2 8 12 3.8 20.8 8 12 12.2z"/><path d="M3.2 8v8.2L12 20.4l8.8-4.2V8"/><path d="M12 12.2v8.2"/>',
+  tea:'<path d="M4.8 9.8h10.6v5.1a5 5 0 0 1-5 5H9.8a5 5 0 0 1-5-5z"/><path d="M15.4 11h2.2a2.4 2.4 0 0 1 0 4.8h-2.2"/><path d="M8.2 6.6c0-1 1-1.4 1-2.4M11.8 6.6c0-1 1-1.4 1-2.4"/><path d="M4.4 20.9h11.4"/>',
+  drink:'<path d="M6.2 7.8h11.6l-1.3 12.1a2 2 0 0 1-2 1.8H9.5a2 2 0 0 1-2-1.8z"/><path d="M4.4 5.6h15.2"/><circle cx="10.2" cy="16.4" r=".9"/><circle cx="13.8" cy="17.8" r=".9"/><circle cx="13.4" cy="13.6" r=".9"/>',
+  speed:'<circle cx="12" cy="13.6" r="7.3"/><path d="M12 9.8v4l2.6 1.6"/><path d="M9.7 3.4h4.6M12 3.4v2.9"/>',
+  quality:'<circle cx="12" cy="12" r="8.4"/><path d="M8.2 12.3l2.6 2.6 5-5.4"/>',
+  clean:'<path d="M11.8 3.2 13.5 7.4 17.8 9l-4.3 1.7-1.7 4.2-1.7-4.2L5.8 9l4.3-1.6z"/><path d="M17.8 14.6l.9 2.1 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/>',
+  safety:'<path d="M12 3.4 19 6v5.6c0 4.2-2.9 7.4-7 9-4.1-1.6-7-4.8-7-9V6z"/><path d="M12 9.5v5M9.5 12h5"/>',
+  form:'<rect x="5.2" y="4.2" width="13.6" height="16.6" rx="2.2"/><path d="M9.4 4.2V3h5.2v1.2"/><path d="M9 10h6M9 13.6h6M9 17.2h3.4"/>',
+};
+
+const ITEMS = [
+  {sec:"前場",name:"服儀確認",w:5,icon:"attire",
+    lv:["未符合","常需提醒","偶有疏漏","每日符合","無懈可擊"],
+    desc:["服裝儀容合標準（衣服、名牌、褲子、鞋子、圍裙、頭髮、指甲、飾品）。","站姿與行為舉止良好。"]},
+  {sec:"前場",name:"服務態度",w:10,icon:"attitude",
+    lv:["態度冷淡","需人提醒","有禮回應","主動關心","顧客稱讚"],
+    desc:["語氣舒適、態度真誠有禮，展現足夠耐心，主動觀察顧客狀態需求。"]},
+  {sec:"前場",name:"櫃檯點餐與收銀操作",w:12,icon:"counter",
+    lv:["未接觸","需人協助","可獨立","快速正確","能帶新人"],
+    desc:["熟悉 POS 點餐、介紹、顧客互動、收銀結帳、接洽外送單、會員權益。","定期清點零錢鈔票、熟悉發票作廢方式。","點餐引導流暢，讓顧客感受舒適。"]},
+  {sec:"前場",name:"服務三用語",w:10,icon:"phrases",
+    lv:["不會說","需人提示","三句齊全","自然流暢","無懈可擊"],
+    desc:[
+      {l:"招呼用語",t:"「您好，今天想喝什麼呢？」（字字正確）"},
+      {l:"等待用語",t:"「不好意思，飲品需要再稍等一下喔！」"},
+      {l:"出餐用語",t:"「(號碼)，(先生/小姐)您的飲品好了喔！久等了謝謝！」"},
+    ]},
+  {sec:"前場",name:"產品知識",w:6,icon:"product",
+    lv:["不熟悉","需人提示","能說明","主動推薦","如數家珍"],
+    desc:[
+      "主動介紹產品；對產品夠熟悉並能清楚傳達給顧客。",
+      {l:"介紹用語",t:"「季緣是以臺灣精品茶為主打，使用等級好的臺灣茶且沒有加香精香料，提供真實的在地原味，結合水果、奶類為不同系列，看您想喝什麼系列可以介紹比較詳細。」"},
+    ]},
+  {sec:"前場",name:"客訴處理",w:5,icon:"complaint",
+    lv:["不會處理","需人協助","可獨立","應對得宜","化解自如"],
+    desc:[
+      {l:"1 接受問題",t:"以友好的態度接受並聆聽顧客的問題，確保顧客感受到被重視。"},
+      {l:"2 理解問題",t:"仔細聆聽顧客的問題，確保充分理解問題的內容和原因，可以透過主動提問來確認理解。"},
+      {l:"3 道歉表達",t:"無論問題的原因是什麼，都應該以誠懇的態度向顧客道歉，表達對顧客不便的歉意。"},
+      {l:"4 解決問題",t:"根據問題的性質和顧客的需求，積極採取行動解決問題，例如重新製作飲品、更換產品、提供折扣或補償等。"},
+      {l:"5 專業解答",t:"如果顧客提出的問題需要專業知識來解答，應該提供準確和專業的解答，並避免使用不確定或含糊的回答。"},
+      {l:"6 跟進與關懷",t:"解決問題後主動跟進，確保顧客對解決方案滿意，並表達對顧客的感謝和關懷，以提升顧客滿意度。"},
+      {l:"7 記錄與反饋",t:"記錄顧客提出的問題和解決方案，並及時向 SM 反饋，以便日後避免類似問題發生，並記錄於管理人日誌當中。"},
+      {l:"8 學習和改進",t:"從問題處理的過程中學習，不斷改進與提升服務水準，並將本次學習經驗分享給至少一位同店同仁。"},
+    ]},
+  {sec:"前場",name:"外送",w:3,icon:"delivery",
+    lv:["未接觸","需人協助","可獨立"],
+    desc:["親切、有效率、精準回覆外送訂單（電話／Line）。","獨立完成外送服務並做售後線上關心。"]},
+
+  {sec:"後場",name:"備料",w:10,icon:"prep",
+    lv:["未接觸","需人協助","可獨立","品質穩定","能帶新人"],
+    desc:["煮茶、茶凍、珍珠、厚奶、奶蓋、黑糖、冬瓜茶等製備流程。"]},
+  {sec:"後場",name:"泡茶",w:10,icon:"tea",ft:true,
+    lv:["未接觸","需人協助","可獨立","品質穩定","駕輕就熟"],
+    desc:["符合品質要求、試喝、即時掌握庫存。"]},
+  {sec:"後場",name:"製作飲品",w:10,icon:"drink",opt:true,
+    lv:["未接觸","需人協助","可獨立","品質穩定","全品項熟練"],
+    desc:["1. 調製台灣精品茶（純茶）。","2. 調製鮮奶茶、奶蓋系列飲品（奶茶、鮮乳）。","3. 調製水果茶系列飲品。","4. 調製無咖啡因系列飲品（冬瓜茶黑糖珍珠鮮奶）。"]},
+  {sec:"後場",name:"飲品製作效率",w:6,icon:"speed",opt:true,
+    lv:["未接觸","需人協助","可獨立","接近達標","達標穩定"],
+    desc:[
+      {l:"效率與速度",t:"非現打或加熱飲品，需達成平均 1 分鐘／杯之製作速度。"},
+      {l:"品質堅持",t:"嚴格遵循製作比例與流程，外觀、口感及溫度皆需符合標準。"},
+      {l:"溝通回報",t:"後場忙碌時，第一時間告知前場，確保出杯節奏。"},
+    ]},
+  {sec:"後場",name:"品質確保",w:10,icon:"quality",
+    lv:["未達標","需人提醒","可獨立","品質穩定","主動把關"],
+    desc:[
+      {l:"1 備料品質",t:"製作之備料符合公司要求之品質。隨時掌握物料狀態，適時補充物料，避免供應不足。"},
+      {l:"2 飲品標準",t:"正確遵循飲品製作比例與流程，並能熟記飲品比例。製作之飲品符合公司要求之外觀、口感及溫度標準。"},
+      {l:"3 效期檢查",t:"定期檢查備料與茶品品質與保存期限，確保新鮮度。"},
+      {l:"4 庫存掌握",t:"對於門店物料庫存量即時掌握，主動提醒店經理叫貨。"},
+    ]},
+  {sec:"後場",name:"設備清潔與維護",w:10,icon:"clean",
+    lv:["未接觸","需人協助","可獨立","確實無漏","主動維護"],
+    desc:["清潔消毒確實完成、封膜機更換、打熱機清潔、沖洗工具無殘留物。","保持作業區之整潔。","正確使用早晚班清單和清潔流程表保養設備。"]},
+  {sec:"後場",name:"安全操作",w:4,icon:"safety",
+    lv:["常忽略","需人提醒","確實遵守","主動維持","以身作則"],
+    desc:["1. 遵循食品安全衛生規範，包括戴口罩、手套。","2. 避免危險行為，以安全方式按流程使用器具。"]},
+  {sec:"後場",name:"門店表單認識填寫",w:5,icon:"form",
+    lv:["未接觸","需人協助","可獨立","正確完整","主動提醒"],
+    desc:["清潔計劃表、廁所清潔紀錄表、溫度紀錄表、餐飲衛生自主管理檢查表、水質機器保養紀錄、物料茶量管理表。"]},
+];
+
+
+
+let html="", sec="";
+ITEMS.forEach(it=>{
+  if(it.sec!==sec){
+    sec=it.sec;
+    const tot=ITEMS.filter(x=>x.sec===sec).reduce((a,x)=>a+x.w,0);
+    html+=`<div class="secbar"><span class="sname">${sec}</span><span class="sline"></span><span class="sw">共 ${tot} 分</span></div>`;
+  }
+  const d=(it.desc||[]).map(x=> typeof x==='string'
+      ? `<div class="cline">${x}</div>`
+      : `<div class="cline"><span class="cl">${x.l}</span>${x.t}</div>`).join('');
+  const tag = it.ft ? `<span class="tagft">正職才評</span>` : it.opt ? `<span class="tagft">有學才評</span>` : '';
+  html+=`<div class="item">
+    <div class="ih">
+      <span class="ico"><svg viewBox="0 0 24 24">${ICONS[it.icon]}</svg></span>
+      <span class="name">${it.name}${tag}</span>
+      <span class="w">配分 ${it.w}</span>
+    </div>
+    <div class="crit"><div class="crit-t">評核標準</div>${d}</div>
+    <div class="lvs">${it.lv.map((l,i)=>`<span class="${i===it.lv.length-1?'top':''}">${i+1} ${l}</span>`).join('')}</div>
+  </div>`;
+});
+document.getElementById('body').innerHTML=html;
+</script>
+</body>
+</html>
