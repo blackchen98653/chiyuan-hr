@@ -60,10 +60,21 @@
   .kpi .pc{font-size:17px;font-weight:900;line-height:1}
   .kpi .sub{font-size:11px;color:var(--muted);margin-top:2px}
 
-  /* 技能 27 格 */
-  .skdots{display:flex;gap:3px;flex-wrap:wrap;margin-top:11px}
-  .skd{width:100%;max-width:11px;height:11px;flex:1 1 11px;border-radius:3px;background:var(--line)}
-  .sk-none{font-size:11.5px;color:var(--muted);margin-top:10px;font-style:normal}
+  /* 技能：五大類覆蓋 + 可展開明細 */
+  .sk-none{font-size:11.5px;color:var(--muted);margin-top:11px;font-style:normal}
+  .gcov{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:11px;cursor:pointer}
+  .gc{flex:1;min-width:60px;text-align:center;border-radius:9px;padding:6px 4px;border:1.5px solid var(--line);background:#fff}
+  .gc .gn{font-size:10.5px;font-weight:800;letter-spacing:.02em}
+  .gc .gd{font-size:13px;font-weight:900;margin-top:1px}
+  .gcov-hint{font-size:11px;color:var(--muted);font-weight:700;white-space:nowrap}
+  .skdetail{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .skdetail.open{display:block}
+  .skg{font-size:11px;font-weight:900;letter-spacing:.1em;margin:9px 0 5px}
+  .skg:first-child{margin-top:0}
+  .skl{display:flex;flex-wrap:wrap;gap:5px 12px}
+  .ski{font-size:12.5px;display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
+  .ski .dot{width:9px;height:9px;border-radius:2px;flex:none}
+  .ski .lv{color:var(--muted);font-size:11px}
 
   /* 班別 */
   .shifts{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
@@ -161,12 +172,28 @@ async function init(){
 function newbieOf(emp){ return PEOPLE.find(p=>p.name===emp.name && p.store===emp.store) || null; }
 function isPassed(nb){ if(!nb) return null; if(nb.passed) return true; const e=nb.eval; if(e){ return H.score(e.levels,nb.job,nb.drinkOn===true)>=H.PASS; } return false; }
 
-function skdotsHTML(empId){
+function groupCov(ev, gk){
+  const g=SK.GROUPS[gk]; let done=0, score=0;
+  g.skills.forEach(sk=>{ const v=ev[sk]; if(v&&LV[v]){ done++; score+=LV[v].weight; } });
+  return { short:g.short, label:g.label, color:g.color, done, total:g.skills.length, pct:Math.round(score/g.skills.length*100) };
+}
+function skillBlockHTML(empId){
   const cov=H.DataAPI.skillCoverage(empId);
   if(cov.done===0) return {html:`<div class="sk-none">技能尚未評核</div>`, cov};
-  let dots='';
-  KEYS.forEach(k=>{ const v=cov.evals[k]; const bg=(v&&LV[v])?LV[v].color:''; dots+=`<span class="skd" style="${bg?'background:'+bg:''}"></span>`; });
-  return {html:`<div class="skdots">${dots}</div>`, cov};
+  const ev=cov.evals, gkeys=Object.keys(SK.GROUPS);
+  // 收合：五大類覆蓋（顏色＝該類熟練度）
+  const chips=gkeys.map(gk=>{ const c=groupCov(ev,gk); const col=c.done?covColor(c.pct):'#C3BFB6';
+    return `<div class="gc" style="border-color:${col}55"><div class="gn" style="color:${col}">${c.short}</div><div class="gd" style="color:${col}">${c.done}/${c.total}</div></div>`;
+  }).join('');
+  // 展開：完整技能清單（依分類，名稱＋等級）
+  let detail='';
+  gkeys.forEach(gk=>{ const g=SK.GROUPS[gk];
+    const items=g.skills.filter(sk=>ev[sk]&&LV[ev[sk]]).map(sk=>{ const lv=ev[sk];
+      return `<span class="ski"><span class="dot" style="background:${LV[lv].color}"></span>${SK.LABELS[sk]}<span class="lv">${LV[lv].label}</span></span>`;
+    }).join('');
+    if(items) detail+=`<div class="skg" style="color:${g.color}">${g.label}</div><div class="skl">${items}</div>`;
+  });
+  return { html:`<div class="gcov"><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">${chips}</div><span class="gcov-hint">▸ 明細</span></div><div class="skdetail">${detail}</div>`, cov };
 }
 function shiftsHTML(empId){
   const sh=H.DataAPI.shiftOf(empId);
@@ -195,7 +222,7 @@ function chipsHTML(nb){
 
 function rowHTML(emp){
   const [rl,rc]=shortRole(emp.role);
-  const {html:dots,cov}=skdotsHTML(emp.id);
+  const {html:skblock,cov}=skillBlockHTML(emp.id);
   const nb=newbieOf(emp);
   const av=emp.name?emp.name[emp.name.length-1]:'?';
   return `<div class="row">
@@ -205,9 +232,9 @@ function rowHTML(emp){
         <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}</span>
         <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?'　到職 '+fmt(nb.join):''}</span>
       </span>
-      <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/27</div></span>
+      <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/${cov.total}</div></span>
     </div>
-    ${dots}
+    ${skblock}
     ${shiftsHTML(emp.id)}
     ${nb?chipsHTML(nb):''}
   </div>`;
@@ -251,6 +278,15 @@ function render(){
     });
   }
   $('body').innerHTML=html;
+
+  // 點五大類覆蓋 → 展開/收合技能明細
+  document.querySelectorAll('#body .gcov').forEach(el=>{
+    const d=el.parentNode.querySelector('.skdetail'); if(!d) return;
+    el.addEventListener('click',()=>{
+      const open=d.classList.toggle('open');
+      const hint=el.querySelector('.gcov-hint'); if(hint) hint.textContent = open?'▾ 收合':'▸ 明細';
+    });
+  });
 }
 
 init();
