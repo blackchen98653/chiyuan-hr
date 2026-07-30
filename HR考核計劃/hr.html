@@ -136,6 +136,7 @@ function storeInfo(raw){
 
 let PEOPLE=[], STAFF=[], curStore='';
 async function init(){
+  await H.DataAPI.syncSkillsToLocal();   // 雲端模式：先把技能/班別抓進本機再顯示
   PEOPLE = await H.DataAPI.getAll();
   PEOPLE.forEach(p=>{ const e=H.DataAPI.loadEval(p); if(e){ p.eval=e; p.drinkOn=!!e.drinkOn; } });
   STAFF = SK.EMPLOYEES.map(e=>{ const si=storeInfo(e.store); return Object.assign({}, e, {store:si.store, leave:si.tag}); });

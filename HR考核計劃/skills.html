@@ -1227,6 +1227,20 @@ function showToast(msg, type){
 // ── 啟動 ──
 render();
 if(SYNC_URL && (state.store || state.role==='supervisor')) loadFromCloud();
+
+// ── 雲端(Cloudflare /api)：載入已匯入/已送出的技能與班別，本機評分優先 ──
+(async function(){
+  try{
+    if(!(window.CHIYUAN && window.CHIYUAN.CONFIG && window.CHIYUAN.CONFIG.USE_CLOUD)) return;
+    const j = await (await fetch(window.CHIYUAN.CONFIG.API_BASE + '/skills')).json();
+    if(j && j.evals){
+      state.evals  = Object.assign({}, j.evals,  state.evals  || {});
+      state.shifts = Object.assign({}, j.shifts||{}, state.shifts || {});
+      saveState();
+      render();
+    }
+  }catch(e){}
+})();
 </script>
 
 <!--
