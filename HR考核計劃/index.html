@@ -201,6 +201,11 @@
 
     <ul class="check" id="list"></ul>
 
+    <div id="chkSubmit" style="display:none;margin-top:8px">
+      <button class="cta" id="btnSubmit" disabled>送出勾選給 HR 核對</button>
+      <p class="learn-note" id="submitNote" style="text-align:center;margin-top:10px"></p>
+    </div>
+
     <div class="learn">
       <div class="sec-head"><h2>新人學習資料</h2></div>
       <a class="doc" href="https://drive.google.com/file/d/1tPsq7jLdakJYHcsx47zUkYyyUyecLoMF/view" target="_blank" rel="noopener">
@@ -275,10 +280,15 @@ $('submit').addEventListener('click', async ()=>{
   else { $('nfNm').textContent = nm; $('nfStore').textContent = '📍 '+store; show('notfound'); }
 });
 $('nfBack').addEventListener('click', ()=>show('reg'));
+$('btnSubmit').addEventListener('click', submitSelf);
 
-let CUR = null;
+let CUR = null, DRAFT = [], SAVED = "[]", justSent = false;
+function normSelf(a){ a = a || []; return new Array(9).fill(false).map((_,k)=>!!a[k]); }
 function buildDash(p){
   CUR = p;
+  DRAFT = normSelf(H.DataAPI.selfTicks(p));   // 本機草稿（尚未送出）
+  SAVED = JSON.stringify(DRAFT);              // 已送出的基準
+  justSent = false;
   show('dash');
   $('wNm').textContent = p.name;
   $('wStore').textContent = '📍 '+p.store;
@@ -292,7 +302,8 @@ function buildDash(p){
 
 function renderChecklist(){
   const cloud = H.DataAPI.cloudTicks(CUR);         // true / "na" / false（雲端大表為準）
-  const self  = H.DataAPI.selfTicks(CUR) || new Array(9).fill(false);
+  const self  = DRAFT;                             // 用本機草稿呈現
+  const savedArr = JSON.parse(SAVED || "[]");      // 已送出的基準（區分待送出/待核對）
   const list = $('list'); list.innerHTML='';
 
   H.CHECKLIST.ITEMS.forEach((it, i)=>{
@@ -314,7 +325,7 @@ function renderChecklist(){
     li.dataset.i = i;
     const stag = cv===true ? `<span class="stag cloud">HR 已登記</span>`
                : cv==='na' ? `<span class="stag na">免（不投保）</span>`
-               : pending   ? `<span class="stag pend">待 HR 核對</span>`
+               : pending   ? `<span class="stag pend">${savedArr[i]?'待 HR 核對':'待送出'}</span>`
                : '';
     li.innerHTML = `
       <span class="idx">${i+1}</span>
@@ -330,13 +341,33 @@ function renderChecklist(){
     list.appendChild(li);
   });
   updateProgress(cloud, self);
+  updateSubmitBar(cloud);
 }
 
 function toggleSelf(i){
-  const base = H.DataAPI.selfTicks(CUR) || [];
-  const self = new Array(9).fill(false).map((_,k)=>!!base[k]);
-  self[i] = !self[i];
-  H.DataAPI.saveSelfTick(CUR, self);
+  DRAFT[i] = !DRAFT[i];   // 只改本機草稿，按「送出」才回報
+  justSent = false;
+  renderChecklist();
+}
+
+function updateSubmitBar(cloud){
+  const wrap=$('chkSubmit'), btn=$('btnSubmit'), note=$('submitNote');
+  const hasUnlocked = cloud.some(v => v!==true && v!=='na');   // 有可自行勾選的項目才顯示
+  if(!hasUnlocked){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const dirty = JSON.stringify(DRAFT) !== SAVED;
+  btn.disabled = !dirty;
+  btn.textContent = dirty ? '送出勾選給 HR 核對' : '已送出';
+  if(justSent){ note.textContent='✓ 已送出，HR 會再核對你勾選的項目。'; note.style.color='var(--ok)'; }
+  else if(dirty){ note.textContent='勾選你已完成、但上面還沒變綠的項目，按下方送出回報給 HR。'; note.style.color='var(--muted)'; }
+  else if(DRAFT.some(Boolean)){ note.textContent='已回報，等 HR 核對；若有新完成的項目，勾選後再送出一次。'; note.style.color='var(--muted)'; }
+  else { note.textContent='勾選你已完成、但上面還沒變綠的項目後送出。'; note.style.color='var(--muted)'; }
+}
+
+function submitSelf(){
+  H.DataAPI.saveSelfTick(CUR, DRAFT);   // 存本機＋（雲端模式）POST /api/checkin
+  SAVED = JSON.stringify(DRAFT);
+  justSent = true;
   renderChecklist();
 }
 
