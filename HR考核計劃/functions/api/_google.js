@@ -17,6 +17,15 @@ function b64url(bytes) {
 function b64urlStr(str) {
   return btoa(unescape(encodeURIComponent(str))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 }
+// 容錯清理私鑰：處理「整段 JSON、多帶引號、\n 字面、Windows 換行」等常見貼錯
+function cleanKey(raw) {
+  let s = String(raw == null ? "" : raw).trim();
+  if (s.charAt(0) === "{") { try { s = JSON.parse(s).private_key || s; } catch (e) {} }
+  else if (s.indexOf('"private_key"') >= 0) { const m = s.match(/"private_key"\s*:\s*"([^"]+)"/); if (m) s = m[1]; }
+  s = s.replace(/^\s*["']|["']\s*$/g, "");
+  s = s.replace(/\\r/g, "").replace(/\\n/g, "\n");
+  return s;
+}
 function pemToBuf(pem) {
   const b64 = pem.replace(/-----BEGIN [^-]+-----/, "").replace(/-----END [^-]+-----/, "").replace(/\s+/g, "");
   const bin = atob(b64);
@@ -36,7 +45,7 @@ async function getToken(env) {
     exp: now + 3600, iat: now,
   };
   const unsigned = b64urlStr(JSON.stringify(header)) + "." + b64urlStr(JSON.stringify(claim));
-  const keyBuf = pemToBuf((env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n"));
+  const keyBuf = pemToBuf(cleanKey(env.GOOGLE_PRIVATE_KEY));
   const key = await crypto.subtle.importKey("pkcs8", keyBuf, { name: "RSASSA-PKCS1-v1_5", hash: "SHA-256" }, false, ["sign"]);
   const sig = await crypto.subtle.sign("RSASSA-PKCS1-v1_5", key, new TextEncoder().encode(unsigned));
   const jwt = unsigned + "." + b64url(sig);
