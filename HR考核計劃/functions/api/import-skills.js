@@ -40,18 +40,27 @@ export async function onRequest({ env }) {
     const now = new Date().toISOString();
     const skillRows=[], shiftRows=[]; let people=0;
 
-    // 2. 逐分頁讀取並轉檔
+    // 大表名冊：姓名 → 工號（把 SM 舊工號對回大表工號，例如一中店 YC→CY）
+    const nameToId={};
+    try{
+      const rr = await api(env, DATA_SHEET_ID+"/values/"+encodeURIComponent("名冊!A2:B"));
+      (rr.values||[]).forEach(x=>{ const id=String(x[0]||'').trim(), nm=String(x[1]||'').trim(); if(nm&&id) nameToId[nm]=id; });
+    }catch(e){}
+
+    // 2. 逐分頁讀取並轉檔（工號以大表為準）
     for(const tab of tabs){
       const res = await api(env, SM_SHEET_ID+"/values/"+encodeURIComponent(tab+"!A1:AH"));
       const data = res.values||[]; if(data.length<2) continue;
       const head = data[0].map(h=>String(h).trim());
       for(let i=1;i<data.length;i++){
-        const row=data[i]; const emp=String(row[0]||"").trim(); if(!emp) continue;
+        const row=data[i]; const nm=String(row[1]||"").trim();
+        const eid = nameToId[nm] || String(row[0]||"").trim();   // 姓名對回大表工號，對不到才用原工號
+        if(!eid) continue;
         people++;
-        shiftRows.push([now, emp, tf(row[2])?1:0, tf(row[3])?1:0, tf(row[4])?1:0]);
+        shiftRows.push([now, eid, tf(row[2])?1:0, tf(row[3])?1:0, tf(row[4])?1:0]);
         for(let c=5;c<head.length;c++){
           const sk=head[c]; const lv=LEVEL_MAP[String(row[c]||"").trim()];
-          if(sk && lv) skillRows.push([now, tab, "(舊資料匯入)", emp, sk, lv]);
+          if(sk && lv) skillRows.push([now, tab, "(舊資料匯入)", eid, sk, lv]);
         }
       }
     }
