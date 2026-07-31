@@ -209,6 +209,16 @@
   .menu.sup{cursor:pointer}
   .menu.sup .mic{background:#EEE9F7}
   .menu.sup .mic svg{stroke:#7C5CD3}
+  .menu.copy{cursor:pointer}
+  .menu.copy .mic{background:var(--tea-soft)}
+  .menu.copy .mic svg{stroke:var(--tea);fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .toast{position:fixed;left:50%;bottom:42px;transform:translateX(-50%) translateY(18px);background:#2A2320;color:#fff;font-size:14px;font-weight:800;letter-spacing:.03em;padding:12px 22px;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:100}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  /* 名字區＝進入考核按鈕；下方 chip 不進考核（只顯示提示） */
+  .rtop.evalgo{cursor:pointer;border-radius:12px;padding:4px;margin:-4px -4px 0;transition:background .12s}
+  .rtop.evalgo:hover{background:#FBF7EF}
+  .rtop.evalgo:active{transform:translateY(1px)}
+  .goeval-pill{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:var(--tea);border-radius:999px;padding:5px 11px;margin-left:8px;white-space:nowrap;box-shadow:0 2px 6px rgba(52,80,63,.25)}
 </style>
 </head>
 <body>
@@ -228,6 +238,13 @@
         <span class="mic"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 18l-5.2 2.8 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
         <span class="mt"><span class="mh">區督導入口</span><span class="ms">評核店經理・跨店</span></span>
         <span class="mgo">›</span>
+      </div>
+    </div>
+    <div class="menu copy" id="btnCopy">
+      <div class="mtop">
+        <span class="mic"><svg viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></span>
+        <span class="mt"><span class="mh">複製新人報到連結</span><span class="ms">傳給新人，自行報到打勾</span></span>
+        <span class="mgo">⧉</span>
       </div>
     </div>
     <p class="foot">HR - CHIYUAN</p>
@@ -267,6 +284,8 @@
 
   <!-- ===== SCREEN 3: EVAL ===== -->
   <section id="eval"></section>
+
+  <div class="toast" id="toast">✓ 網址已複製</div>
 </div>
 
 <script src="assets/config.js"></script>
@@ -331,6 +350,15 @@ let curStore=null, curHire=null, draft={}, draftMemo="";
   });
 })();
 $('goSup').addEventListener('click',()=>{ location.href='skills.html?role=supervisor'; });
+$('btnCopy').addEventListener('click', async ()=>{
+  const url = new URL('index.html', location.href).href;   // 新人報到頁網址
+  try{
+    if(navigator.clipboard && navigator.clipboard.writeText){ await navigator.clipboard.writeText(url); }
+    else { const ta=document.createElement('textarea'); ta.value=url; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+    showToast('✓ 新人報到網址已複製');
+  }catch(e){ showToast('複製失敗，請長按網址手動複製'); }
+});
+function showToast(msg){ const t=$('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(showToast._t); showToast._t=setTimeout(()=>t.classList.remove('show'),2000); }
 $('goSkills').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
 $('goOnboard').addEventListener('click', async ()=>{ await loadRoster(); showRoster(); });
 $('btnHome').addEventListener('click',()=>{
@@ -394,13 +422,13 @@ function statHTML(h){
   return `<span class="badge soon">還有 ${left} 天</span>`;
 }
 function rowHTML(h,hi){
-  return `<div class="row ${hi?'duehi':''} ${h.passed?'doneRow':''}" data-id="${h.id}">
-    <span class="rtop">
+  return `<div class="row ${hi?'duehi':''} ${h.passed?'doneRow':''}">
+    <span class="rtop evalgo" data-id="${h.id}">
       <span class="av">${BUST(h.passed || !!h.eval)}</span>
       <span class="who">
         <span class="n">${h.name}<span class="job ${h.job==='PT'?'pt':''}">${h.job==='PT'?'兼職':'正職'}</span><span class="jd">到職 ${fmt(h.join)}</span>${pendingCount(h)?`<span class="pend">待核對 ${pendingCount(h)}</span>`:''}</span>
       </span>
-      <span class="stat">${statHTML(h)}<span class="arrow">›</span></span>
+      <span class="stat">${statHTML(h)}<span class="goeval-pill">進入考核 ›</span></span>
     </span>
     ${chipsHTML(h)}
   </div>`;
