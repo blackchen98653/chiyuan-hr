@@ -10,7 +10,7 @@ window.CHIYUAN = (function () {
 /* ========== 1. API 設定（拿到金鑰後改這裡） ========================= */
 const CONFIG = {
   // false = 用下方樣本名冊預覽；true = 走雲端（Cloudflare Functions + Google 服務帳戶）
-  USE_CLOUD: true,
+  USE_CLOUD: false,
   API_BASE: "/api",   // 前端只呼叫自己的 /api/*，後端用服務帳戶讀寫 Google Sheets
 };
 
@@ -646,12 +646,17 @@ const STORE_CODES = {
      11 新人護照發放 | 12 新人護照考核(通過試用期)=新考 | 13 季緣人考核 | 14 推薦人 | 15 面試者
      16 新人自報(由系統從新表 join 進來，9碼0/1；顯示待核對)
    =============================================================== */
-function toBool(v){ const s=String(v).trim().toLowerCase();
-  if(s==="na"||s==="免"||s==="免投保") return "na";
-  return s==="1"||s==="true"||s==="v"||s==="✓"||s==="y"||s==="是"; }
-// 新人護照考核（通過試用期）：有日期/V/通過都算通過；空白、O、未、x 算未通過
-function isPass(v){ if(v==null) return false; const s=String(v).trim();
-  if(s===""||/^[Oo0]$/.test(s)||/未|[xX✗]/.test(s)) return false; return true; }
+// 全形英數 → 半形（大表用 Ｖ／Ｘ／Ｏ 等全形字）
+function normVX(v){ return String(v==null?"":v).trim().replace(/[Ａ-Ｚａ-ｚ０-９]/g, function(c){ return String.fromCharCode(c.charCodeAt(0)-0xFEE0); }); }
+// 一般欄位（存摺/健檢/契約）：V 開頭(含「V(中信)」)算已完成
+function toBool(v){ const s=normVX(v).toLowerCase();
+  if(s===""||s==="x"||s==="0"||s==="false"||s==="o") return false;
+  if(s.indexOf("免")>=0||s==="na") return "na";
+  return s.charAt(0)==="v"||s.indexOf("✓")>=0||s.indexOf("是")>=0||s==="y"||s==="1"||s==="true"; }
+// 健保：Ｖ=投保(true)、Ｘ=免/不投保(na)、空=未處理(false)
+function hbVal(v){ const s=normVX(v).toUpperCase(); if(s==="") return false; if(s.charAt(0)==="V") return true; if(s.charAt(0)==="X") return "na"; return false; }
+// 新人護照考核（通過試用期）：V/日期=通過；空白、Ｏ、未、Ｘ=未通過
+function isPass(v){ const s=normVX(v).toUpperCase(); if(s===""||s==="O"||/未|X|✗/.test(s)) return false; return true; }
 
 // 雲端一列 → 人員物件（欄位對不上時來這裡改）
 function personFromRow(r){
@@ -660,8 +665,9 @@ function personFromRow(r){
     name:(r[1]||"").trim(),
     join: r[2] ? new Date(r[2]) : new Date(),
     store:(r[3]||"").trim(),
+    role: String(r[4]||"").trim(),   // 職稱（店經理/儲備店經理/正職門店人員/兼職人員…）
     job: (String(r[4]).indexOf("兼")>=0 || String(r[4]).toUpperCase()==="PT") ? "PT" : "FT",
-    chk: { hb:toBool(r[5]), cz:toBool(r[6]), jk:toBool(r[7]), ld:toBool(r[9]) },  // 健保/存摺/健檢/契約
+    chk: { hb:hbVal(r[5]), cz:toBool(r[6]), jk:toBool(r[7]), ld:toBool(r[9]) },  // 健保/存摺/健檢/契約
     passed: isPass(r[12]),          // 新人護照考核（通過試用期）
     selfReport: parseSelf(r[16]),   // 新人自報（系統從新表 join）
     drinkOn:false, eval:null,
