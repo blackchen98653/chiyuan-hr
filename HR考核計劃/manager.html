@@ -131,12 +131,13 @@
   .ci svg{width:11px;height:11px;flex:none;display:block}
   .ci .sq{fill:none;stroke:currentColor;stroke-width:2.6}
   /* 尚未繳交／登記 → 紅色醒目 */
-  .ci.no{color:#C0392B;background:#FBE6E2;border-color:#F0BCB2}
+  .ci.no{color:#fff;background:#D9483A;border:1.5px solid #C0392B}
+  .ci.no .sq{stroke:#fff}
   .ci.na{color:#8C8477;background:#F0EDE6;border-color:#E4DED2}
   .ci.na .xm{stroke:currentColor;stroke-width:3.2;fill:none;stroke-linecap:round}
   /* 待核對（與 HR 紀錄不符）→ 強化橘色 */
-  .ci.self{color:#B4530A;background:#FDE3BF;border:1.5px solid #E8912A;box-shadow:0 0 0 2px rgba(232,145,42,.22)}
-  .ci.self .dt2{fill:currentColor;stroke:none}
+  .ci.self{color:#fff;background:#F0902A;border:1.5px solid #D9760E;box-shadow:0 0 0 2px rgba(240,144,42,.30)}
+  .ci.self .dt2{fill:#fff;stroke:none}
   .ci.on{color:#3E7A54;background:#E8F2EA;border-color:#CFE2D3}
   .ci.on svg{stroke:currentColor;stroke-width:3.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
   /* 即時提示（取代慢速的系統 title） */

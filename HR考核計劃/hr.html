@@ -91,15 +91,22 @@
 
   /* checklist chips + 新考 */
   .chkrow{display:flex;flex-wrap:wrap;gap:4px;margin-top:11px;padding-top:11px;border-top:1px dashed var(--line)}
-  .ci{min-width:50px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:800;color:#9A8F80;background:#F7F3EC;border:1px solid #EFE8DC;border-radius:8px;padding:5px 6px}
+  .ci{position:relative;min-width:50px;display:flex;flex-direction:column;align-items:center;gap:3px;font-size:9.5px;font-weight:800;color:#9A8F80;background:#F7F3EC;border:1px solid #EFE8DC;border-radius:8px;padding:5px 6px}
   .ci svg{width:11px;height:11px;flex:none}
   .ci .sq{fill:none;stroke:currentColor;stroke-width:2.6}
+  /* 尚未繳交／登記 → 紅色醒目 */
+  .ci.no{color:#fff;background:#D9483A;border:1.5px solid #C0392B}
+  .ci.no .sq{stroke:#fff}
   .ci.na{color:#8C8477;background:#F0EDE6;border-color:#E4DED2}
   .ci.na .xm{stroke:currentColor;stroke-width:3.2;fill:none;stroke-linecap:round}
-  .ci.self{color:#A9701F;background:#FBEFE2;border-color:#EAD3B4}
-  .ci.self .dt2{fill:currentColor;stroke:none}
+  /* 待核對（與 HR 紀錄不符）→ 強化橘色 */
+  .ci.self{color:#fff;background:#F0902A;border:1.5px solid #D9760E;box-shadow:0 0 0 2px rgba(240,144,42,.30)}
+  .ci.self .dt2{fill:#fff;stroke:none}
   .ci.on{color:#3E7A54;background:#E8F2EA;border-color:#CFE2D3}
   .ci.on svg{stroke:currentColor;stroke-width:3.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  /* 即時提示 */
+  .ci[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#2A2320;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;z-index:30;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+  .ci[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2A2320;z-index:30;pointer-events:none}
   .ci.nk{border-style:solid}
   .ci.nk.pass{color:#fff;background:var(--tea);border-color:var(--tea)}
   .ci.nk.wait{color:var(--red);background:var(--red-soft);border-color:#F0C9C2}
@@ -222,7 +229,7 @@ function prefShiftHTML(empId){
 function chipsHTML(nb){
   const live=H.DataAPI.liveTicks(nb);
   let chips=live.map((v,i)=>
-    `<span class="ci ${v==='na'?'na':v==='self'?'self':(v?'on':'')}" title="${FULL[i]}"><span class="lb">${ABBR[i]}</span>`+
+    `<span class="ci ${v==='na'?'na':v==='self'?'self':(v?'on':'no')}" data-tip="${FULL[i]}${v===true?'（HR 已登記）':v==='na'?'（免投保）':v==='self'?'（新人已回報，待 HR 核對）':'（尚未繳交／登記）'}"><span class="lb">${ABBR[i]}</span>`+
     (v==='na'?`<svg viewBox="0 0 24 24"><path class="xm" d="M6 6l12 12M18 6L6 18"/></svg>`
      : v==='self'?`<svg viewBox="0 0 24 24"><circle class="dt2" cx="12" cy="12" r="5"/></svg>`
      : v===true?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
@@ -230,7 +237,7 @@ function chipsHTML(nb){
     `</span>`).join('');
   // 後方新增「新考」= 新人考核是否通過
   const pass=isPassed(nb);
-  chips += `<span class="ci nk ${pass?'pass':'wait'}" title="新人考核${pass?'已通過':'尚未通過'}"><span class="lb">新考</span>`+
+  chips += `<span class="ci nk ${pass?'pass':'wait'}" data-tip="新人考核${pass?'已通過':'尚未通過'}"><span class="lb">新考</span>`+
     (pass?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
         :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+`</span>`;
   return `<div class="chkrow">${chips}</div>`;
