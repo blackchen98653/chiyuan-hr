@@ -157,7 +157,10 @@ async function init(){
   await H.DataAPI.syncSkillsToLocal();   // 雲端模式：先把技能/班別抓進本機再顯示
   PEOPLE = await H.DataAPI.getAll();
   PEOPLE.forEach(p=>{ const e=H.DataAPI.loadEval(p); if(e){ p.eval=e; p.drinkOn=!!e.drinkOn; } });
-  STAFF = SK.EMPLOYEES.map(e=>{ const si=storeInfo(e.store); return Object.assign({}, e, {store:si.store, leave:si.tag}); });
+  // 員工清單＝大表在職名單（加人/刪人即時反映）；只取 12 門市
+  STAFF = PEOPLE.filter(p=>(p.name||'').trim())
+    .map(p=>{ const si=storeInfo(p.store); return Object.assign({}, p, {store:si.store, leave:si.tag}); })
+    .filter(p=> SK.EVALUABLE_STORES.indexOf(p.store)>=0 );
 
   const wrap=$('fStore');
   const mk=(v,l)=>{ const b=document.createElement('button'); b.dataset.v=v; b.textContent=l; if(v===curStore)b.classList.add('on'); wrap.appendChild(b); };
@@ -178,8 +181,8 @@ async function init(){
   render();
 }
 
-// 新人名冊比對（用姓名+門市），拿得到才有 checklist / 新考
-function newbieOf(emp){ return PEOPLE.find(p=>p.name===emp.name && p.store===emp.store) || null; }
+// 仍在報到/試用期（新人護照考核未通過）→ 顯示 checklist / 新考
+function isNewbie(p){ return !p.passed; }
 function isPassed(nb){ if(!nb) return null; if(nb.passed) return true; const e=nb.eval; if(e){ return H.score(e.levels,nb.job,nb.drinkOn===true)>=H.PASS; } return false; }
 
 function groupCov(ev, gk){
@@ -236,7 +239,7 @@ function chipsHTML(nb){
 function rowHTML(emp){
   const [rl,rc]=shortRole(emp.role);
   const {html:skblock,cov}=skillBlockHTML(emp.id);
-  const nb=newbieOf(emp);
+  const nb=isNewbie(emp)?emp:null;
   const av=emp.name?emp.name[emp.name.length-1]:'?';
   return `<div class="row">
     <div class="rtop">
@@ -262,7 +265,7 @@ function render(){
   let base=STAFF.slice(); if(curStore) base=base.filter(e=>e.store===curStore);
   const evaled=base.filter(e=>H.DataAPI.skillCoverage(e.id).done>0).length;
   const avg=base.length?Math.round(base.reduce((s,e)=>s+H.DataAPI.skillCoverage(e.id).pct,0)/base.length):0;
-  const newbies=base.filter(e=>newbieOf(e)).length;
+  const newbies=base.filter(isNewbie).length;
   const stores=curStore?1:new Set(base.map(e=>e.store)).size;
   $('stats').innerHTML=`
     <div class="stat"><div class="num">${base.length}</div><div class="lb">在職夥伴</div></div>
@@ -284,7 +287,7 @@ function render(){
     SK.EVALUABLE_STORES.forEach(store=>{
       const grp=list.filter(e=>e.store===store).sort(sortFn);
       if(!grp.length) return;
-      const gn=grp.filter(e=>newbieOf(e)).length;
+      const gn=grp.filter(isNewbie).length;
       html+=`<div class="store-head"><span class="nm">📍 ${store}</span><span class="ct">${grp.length} 人${gn?'・新人 '+gn:''}</span></div>`;
       html+=grp.map(rowHTML).join('');
     });

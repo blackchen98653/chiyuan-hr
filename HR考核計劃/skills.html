@@ -162,9 +162,12 @@ const SYNC_URL = window.location.href.split('?')[0];
 const H = window.CHIYUAN, SK = H.SKILLS;
 const SKILL_GROUPS=SK.GROUPS, SKILL_LABELS=SK.LABELS, SKILL_ICONS=SK.ICONS,
       ONBOARD_TO_SKILL=SK.ONBOARD_TO_SKILL, ONBOARD_LEVEL_TO_SM=SK.ONBOARD_LEVEL_TO_SM,
-      EVALUABLE_STORES=SK.EVALUABLE_STORES, EMPLOYEES=SK.EMPLOYEES,
+      EVALUABLE_STORES=SK.EVALUABLE_STORES,
       LEVELS=SK.LEVELS, LEVEL_ORDER=SK.LEVEL_ORDER, ALL_SKILL_KEYS=SK.ALL_KEYS,
       STORE_CODES=SK.STORE_CODES, SUPERVISOR_CODE=SK.SUPERVISOR_CODE;
+// 員工清單：雲端模式改讀大表(/api/roster)，加人就自動出現；離線用內建快照
+let EMPLOYEES = SK.EMPLOYEES;
+function normStore(raw){ raw=String(raw||'').trim(); for(const p of ['留停','病假','育嬰','留職停薪']){ if(raw.startsWith(p)){ const rest=raw.slice(p.length); return EVALUABLE_STORES.find(s=>s.startsWith(rest)||s.indexOf(rest)>=0)||raw; } } return raw; }
 
 // ════════════════════════════════════════════════════════════════════════
 // 2. 技能架構（與戰情室共用，共 27 項）
@@ -1222,11 +1225,20 @@ function showToast(msg, type){
 })();
 render();
 
-// ── 雲端(Cloudflare /api)：載入已匯入/已送出的技能與班別，本機評分優先 ──
+// ── 雲端(Cloudflare /api)：載入大表在職名單 + 已匯入/已送出的技能與班別 ──
 (async function(){
   try{
     if(!(window.CHIYUAN && window.CHIYUAN.CONFIG && window.CHIYUAN.CONFIG.USE_CLOUD)) return;
-    const j = await (await fetch(window.CHIYUAN.CONFIG.API_BASE + '/skills')).json();
+    const base=window.CHIYUAN.CONFIG.API_BASE;
+    // 員工清單直接讀大表：加人/刪人即時反映（工號空的略過，因技能資料以工號為鍵）
+    try{
+      const r=await (await fetch(base+'/roster')).json();
+      const rows=r.values||[];
+      const live=rows.filter(x=>String(x[0]||'').trim()&&String(x[1]||'').trim())
+        .map(x=>({ id:String(x[0]).trim(), name:String(x[1]).trim(), store:normStore(x[3]), role:String(x[4]||'').trim() }));
+      if(live.length){ EMPLOYEES=live; render(); }
+    }catch(e){}
+    const j = await (await fetch(base + '/skills')).json();
     if(j && j.evals){
       state.evals  = Object.assign({}, j.evals,  state.evals  || {});
       state.shifts = Object.assign({}, j.shifts||{}, state.shifts || {});

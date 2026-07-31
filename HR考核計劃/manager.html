@@ -207,7 +207,7 @@
 <body>
 <div class="wrap">
   <div class="top">
-    <button class="hbtn" id="btnHome">‹ 回到首頁</button>
+    <button class="hbtn" id="btnHome">‹ 上一頁</button>
     <button class="hbtn alt" id="btnSwitch">切換技能評核 ›</button>
   </div>
 
@@ -326,7 +326,12 @@ let curStore=null, curHire=null, draft={}, draftMemo="";
 $('goSup').addEventListener('click',()=>{ location.href='skills.html?role=supervisor'; });
 $('goSkills').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
 $('goOnboard').addEventListener('click', async ()=>{ await loadRoster(); showRoster(); });
-$('btnHome').addEventListener('click',()=>{ curStore=null; show('home'); });
+$('btnHome').addEventListener('click',()=>{
+  if($('eval').style.display==='block'){ showRoster(); }          // 考核 → 回名單挑下一位
+  else if($('roster').style.display==='block'){ show('storemenu'); } // 名單 → 該店選單
+  else if($('storemenu').style.display==='block'){ curStore=null; show('home'); } // 選單 → 首頁
+  else { show('home'); }
+});
 $('btnSwitch').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
 function show(name){
   ['home','storemenu','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
