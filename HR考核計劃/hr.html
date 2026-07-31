@@ -71,11 +71,15 @@
   .skdetail.open{display:block}
   .skg{font-size:11px;font-weight:900;letter-spacing:.1em;margin:9px 0 5px}
   .skg:first-child{margin-top:0}
-  .skl{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px 14px}
-  .skm{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px}
-  .skm-n{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .skl{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));column-gap:28px;row-gap:9px}
+  .skm{display:flex;align-items:center;gap:10px;font-size:12.5px}
+  .skm-n{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
   .skm-bar{display:inline-flex;gap:2px;flex:none}
   .skm-bar i{width:5px;height:12px;border-radius:1px;background:#E7E1D5}
+  /* 偏好班別（放名字旁） */
+  .prefshift{margin-left:8px;display:inline-flex;align-items:center;gap:4px;vertical-align:1px}
+  .pslab{font-size:10.5px;color:var(--muted);font-weight:700}
+  .sh.sm{font-size:11px;padding:2px 8px;font-weight:700}
 
   /* 班別 */
   .shifts{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
@@ -203,13 +207,14 @@ function skillBlockHTML(empId){
   });
   return { html:`<div class="gcov"><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">${chips}</div><span class="gcov-hint">▸ 明細</span></div><div class="skdetail">${detail}</div>`, cov };
 }
-function shiftsHTML(empId){
+// 偏好班別（放名字旁，只顯示有設定的）
+function prefShiftHTML(empId){
   const sh=H.DataAPI.shiftOf(empId);
-  const conf=[['morning','☀️ 早','mor'],['mid','⛅ 中','mid'],['night','🌙 晚','nig']];
-  const any=conf.some(c=>sh[c[0]]);
-  return `<div class="shifts"><span class="slab">班別</span>`+
-    conf.map(c=>`<span class="sh ${c[2]} ${sh[c[0]]?'on':''}">${c[1]}</span>`).join('')+
-    (any?'':`<span class="slab" style="margin-left:2px">尚未設定</span>`)+`</div>`;
+  const conf=[['morning','☀️早','mor'],['mid','⛅中','mid'],['night','🌙晚','nig']];
+  const on=conf.filter(c=>sh[c[0]]);
+  if(!on.length) return '';
+  return `<span class="prefshift"><span class="pslab">偏好班別</span>`+
+    on.map(c=>`<span class="sh sm ${c[2]} on">${c[1]}</span>`).join('')+`</span>`;
 }
 function chipsHTML(nb){
   const live=H.DataAPI.liveTicks(nb);
@@ -237,13 +242,12 @@ function rowHTML(emp){
     <div class="rtop">
       <span class="av">${av}</span>
       <span class="who">
-        <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}</span>
+        <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}${prefShiftHTML(emp.id)}</span>
         <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?'　到職 '+fmt(nb.join):''}</span>
       </span>
       <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/${cov.total}</div></span>
     </div>
     ${skblock}
-    ${shiftsHTML(emp.id)}
     ${nb?chipsHTML(nb):''}
   </div>`;
 }
