@@ -189,60 +189,61 @@
   input[type=password]:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
   .err{color:#B4472E;font-size:13px;margin:10px 2px 0;display:none}
   .err.show{display:block}
+  /* 首頁/切換按鈕 */
+  .hbtn{font-family:inherit;font-size:15px;font-weight:800;color:var(--tea);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 16px;cursor:pointer}
+  .hbtn:active{transform:translateY(1px)}
+  .hbtn.alt{color:#8A5A1C;border-color:#EAD9BE;background:var(--sugar-soft)}
+  /* 門市格 */
+  .storegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
+  @media(max-width:380px){.storegrid{grid-template-columns:repeat(2,1fr)}}
+  .storegrid button{font-family:inherit;font-size:15px;font-weight:800;color:var(--tea-deep);background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:15px 6px;cursor:pointer;transition:all .12s}
+  .storegrid button:hover{border-color:var(--tea);color:var(--tea)}
+  .storegrid button:active{transform:scale(.97)}
+  .menu.sup{cursor:pointer}
+  .menu.sup .mic{background:#EEE9F7}
+  .menu.sup .mic svg{stroke:#7C5CD3}
 </style>
 </head>
 <body>
 <div class="wrap">
   <div class="top">
-    <span class="eyebrow">HR - CHIYUAN</span>
-    <button class="back" id="back">返回</button>
+    <button class="hbtn" id="btnHome">‹ 回到首頁</button>
+    <button class="hbtn alt" id="btnSwitch">切換技能評核 ›</button>
   </div>
 
-  <!-- ===== SCREEN 0: ENTRY MENU ===== -->
-  <section id="entry">
+  <!-- ===== HOME: 選門市 + 區督導 ===== -->
+  <section id="home">
     <h1 class="big">店經理<span class="hl">考核平台</span></h1>
-    <p class="lead">請選擇要進行的考核。</p>
+    <p class="lead">選擇你的門市。</p>
+    <div class="storegrid" id="storeGrid"></div>
+    <div class="menu sup" id="goSup">
+      <div class="mtop">
+        <span class="mic"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 18l-5.2 2.8 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
+        <span class="mt"><span class="mh">區督導入口</span><span class="ms">評核店經理・跨店</span></span>
+        <span class="mgo">›</span>
+      </div>
+    </div>
+    <p class="foot">HR - CHIYUAN</p>
+  </section>
 
+  <!-- ===== STORE MENU: 該門市要做哪個考核 ===== -->
+  <section id="storemenu">
+    <div class="store-head"><span class="pin">📍</span><span class="nm" id="smStore">—</span></div>
     <div class="menu a" id="goOnboard">
       <div class="mtop">
         <span class="mic"><svg viewBox="0 0 24 24"><path d="M9 11l2 2 4-4"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg></span>
         <span class="mt"><span class="mh">新人考核</span><span class="ms">新進人員訓練計劃表</span></span>
         <span class="mgo">›</span>
       </div>
-      <div class="mdesc">新人到職滿一個月的單次考核，<b>15 個項目</b>、100 分制。看你門市的待考核名單並評分。</div>
+      <div class="mdesc">滿一個月的單次考核，<b>15 項</b>、100 分制。看店內待考核名單並評分。</div>
     </div>
-
-    <a class="menu b" href="skills.html">
+    <div class="menu b" id="goSkills">
       <div class="mtop">
         <span class="mic"><svg viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 18l-5.2 2.8 1-5.8L3.5 9.2l5.9-.9z"/></svg></span>
-        <span class="mt"><span class="mh">技能評核</span><span class="ms">SM 技能盤點・全員・每月更新</span></span>
+        <span class="mt"><span class="mh">技能評核</span><span class="ms">全員技能盤點・28 項・五級</span></span>
         <span class="mgo">›</span>
       </div>
-      <div class="mdesc">全店員工的技能狀態盤點，<b>27 項技能</b>、五級。做過新人考核的項目會<b>自動帶入</b>，不用重複評。</div>
-    </a>
-
-    <p class="foot">HR - CHIYUAN</p>
-  </section>
-
-  <!-- ===== SCREEN 1: PICK STORE ===== -->
-  <section id="pick">
-    <h1 class="big">新人<span class="hl">考核</span></h1>
-    <p class="lead">選擇你的門市，就能看到店內新人的報到進度與待考核名單。</p>
-    <div class="card">
-      <label class="lab" for="store">你的門市</label>
-      <select id="store">
-        <option value="" disabled selected>選擇門市</option>
-        <optgroup label="北市"><option>小巨蛋店</option><option>師大店</option><option>松江店</option><option>忠孝店</option><option>內湖店</option><option>台北車站店</option><option>大安店</option><option>光華店</option></optgroup>
-        <optgroup label="新北市"><option>頂溪店</option><option>板橋店</option></optgroup>
-        <optgroup label="中區"><option>一中店</option><option>逢甲店</option></optgroup>
-      </select>
-      <div id="pwWrap" style="display:none">
-        <label class="lab" for="pw" style="margin-top:14px">門市密碼</label>
-        <input id="pw" type="password" placeholder="輸入你門市的密碼" autocomplete="off">
-        <div class="err" id="pwErr">密碼錯誤，請再試一次。</div>
-      </div>
-      <p class="hint">未設定密碼的門市為測試模式，可直接進入。</p>
-      <button class="cta" id="enter">進入門市</button>
+      <div class="mdesc">做過新人考核的項目會<b>自動帶入</b>，不用重複評。</div>
     </div>
     <p class="foot">HR - CHIYUAN</p>
   </section>
@@ -314,34 +315,31 @@ function canEdit(ev){ return hoursLeft(ev) > 0 || (ev.unlockUntil && ev.unlockUn
 /* ===== state ===== */
 let curStore=null, curHire=null, draft={}, draftMemo="";
 
-/* ===== screen 0/1: 選單 + 門市密碼 ===== */
-$('goOnboard').addEventListener('click',()=>{ show('pick'); });
-$('store').addEventListener('change',()=>{
-  const s=$('store').value;
-  const need = !!(H.STORE_PW && H.STORE_PW[s]);
-  $('pwWrap').style.display = need ? 'block':'none';
-  $('pwErr').classList.remove('show'); if($('pw')) $('pw').value='';
-});
-$('enter').addEventListener('click', async ()=>{
-  const s=$('store').value; if(!s) return;
-  const pw = H.STORE_PW && H.STORE_PW[s];
-  if(pw){
-    if($('pw').value !== pw){ $('pwErr').classList.add('show'); return; }
-    $('pwErr').classList.remove('show');
-  }
-  await loadRoster();
-  curStore=s; showRoster();
-});
-$('back').addEventListener('click',()=>{
-  if($('eval').style.display==='block'){ showRoster(); }
-  else if($('roster').style.display==='block'){ curStore=null; show('pick'); }
-  else { show('entry'); }
-});
+/* ===== 首頁：門市格 + 區督導 ===== */
+(function fillStoreGrid(){
+  const grid=$('storeGrid');
+  H.ALL_STORES.forEach(s=>{ const b=document.createElement('button'); b.textContent=s;
+    b.addEventListener('click',()=>{ curStore=s; $('smStore').textContent=s; show('storemenu'); });
+    grid.appendChild(b);
+  });
+})();
+$('goSup').addEventListener('click',()=>{ location.href='skills.html?role=supervisor'; });
+$('goSkills').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
+$('goOnboard').addEventListener('click', async ()=>{ await loadRoster(); showRoster(); });
+$('btnHome').addEventListener('click',()=>{ curStore=null; show('home'); });
+$('btnSwitch').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
 function show(name){
-  ['entry','pick','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
-  $('back').style.display = name==='entry' ? 'none':'block';
+  ['home','storemenu','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
+  $('btnHome').style.display = name==='home' ? 'none':'block';
+  $('btnSwitch').style.display = (name==='roster'||name==='eval') ? 'block':'none';
   window.scrollTo(0,0);
 }
+/* 從 skills「切換新人考核」帶 ?store= 回來 → 直接進該店新人考核；否則回首頁 */
+(async function initFromUrl(){
+  const s=new URLSearchParams(location.search).get('store');
+  if(s && H.ALL_STORES.indexOf(s)>=0){ curStore=s; $('smStore').textContent=s; await loadRoster(); showRoster(); }
+  else show('home');
+})();
 
 /* ===== screen 2: roster ===== */
 function showRoster(){

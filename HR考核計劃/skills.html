@@ -31,7 +31,10 @@ body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 .app{max-width:480px;margin:0 auto;padding:0 12px calc(180px + env(safe-area-inset-bottom));min-height:100vh}
 
 /* ── 頂列 ── */
-.tophdr{padding:14px 4px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.navbar{display:flex;gap:8px;padding:12px 4px 2px}
+.nbtn{font-family:inherit;font-size:14px;font-weight:800;color:var(--text2);background:var(--card);border:1.5px solid var(--border2);border-radius:11px;padding:10px 14px;cursor:pointer}
+.nbtn.alt{color:var(--accent);border-color:rgba(232,131,42,.4);background:rgba(232,131,42,.06)}
+.tophdr{padding:8px 4px 10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
 .brand{display:flex;align-items:center;gap:9px}
 .brand-icon{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;font-size:17px;box-shadow:0 3px 8px rgba(232,131,42,.3)}
 .brand-text{font-weight:900;font-size:16px;color:var(--text);line-height:1.2}
@@ -581,9 +584,13 @@ function renderMain(){
 
   const isSup = state.role==='supervisor';
   const headerTag = isSup
-    ? `<div class="tag-store" style="background:var(--purple);color:#fff;border-color:var(--purple)" onclick="changeStore()">區督導模式 ⇄</div>`
-    : `<div class="tag-store" onclick="changeStore()">${state.store} ⇄</div>`;
+    ? `<div class="tag-store" style="background:var(--purple);color:#fff;border-color:var(--purple)">區督導模式</div>`
+    : `<div class="tag-store">${state.store}</div>`;
   let html = `
+    <div class="navbar">
+      <button class="nbtn" onclick="location.href='manager.html'">‹ 回到首頁</button>
+      ${isSup ? '' : `<button class="nbtn alt" onclick="location.href='manager.html?store=${encodeURIComponent(state.store)}'">切換新人考核 ›</button>`}
+    </div>
     <div class="tophdr">
       <div class="brand">
         <div class="brand-icon">${isSup?'🎯':'SM'}</div>
@@ -593,7 +600,7 @@ function renderMain(){
         </div>
       </div>
       <div style="display:flex;gap:6px;align-items:center">
-        <button onclick="manualReloadFromCloud(this)" title="從雲端拉最新評核(包含戰情室修改)" style="padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;line-height:1">🔄</button>
+        <button onclick="location.reload()" title="重新整理（抓雲端最新評核）" style="padding:6px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;font-size:13px;font-weight:700;color:var(--text2);cursor:pointer;line-height:1">🔄</button>
         ${headerTag}
       </div>
     </div>
@@ -634,7 +641,7 @@ function renderMain(){
 
   html += `
     <div class="bottom-bar">
-      <button class="btn btn-secondary" onclick="logoutAndHome()">🚪 登出</button>
+      <button class="btn btn-secondary" onclick="logoutAndHome()">🏠 回到首頁</button>
       <button class="btn btn-primary" onclick="submitEval()">📤 送出評核 (${totalDone}/${partners.length})</button>
     </div>
 
@@ -878,28 +885,8 @@ function changeStore(){
 // 之前這裡完全沒有確認，手滑點到就整店資料歸零。現在比照 changeStore() 的做法先跳確認，
 // 且只要本機還有任何評核資料就明確警告會消失。
 function logoutAndHome(){
-  const evalCount = Object.keys(state.evals||{}).length;
-  if(evalCount > 0){
-    const ok = confirm(
-      `目前本機還留著 ${evalCount} 位夥伴的評核資料。\n` +
-      `如果還沒按過「📤 送出評核」同步到雲端，登出後這些資料會直接消失、無法復原！\n\n` +
-      `確定要登出嗎？`
-    );
-    if(!ok) return;
-  }
-  state.role='';
-  state.store='';
-  state.manager='';
-  state.evals={};
-  state.shifts={};
-  state.authed=false;
-  state.updated='';
-  saveState();
-  _lockMode='choose';
-  const panel=document.getElementById('sync-panel');
-  if(panel) panel.remove();
-  showToast('已登出 · 回到首頁','success');
-  render();
+  // 評核已存本機、送出時同步雲端；直接回首頁即可（不清資料）
+  location.href = 'manager.html';
 }
 
 // ── 送出評核 (生成同步碼) ──
@@ -946,7 +933,7 @@ function submitEval(){
       ☁️ <b>正在同步到雲端</b>，總部戰情室按「同步雲端評核」就會更新
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-      <button class="btn btn-primary" style="width:100%" onclick="logoutAndHome()">🚪 完成評核 · 登出回首頁</button>
+      <button class="btn btn-primary" style="width:100%" onclick="logoutAndHome()">🏠 完成評核 · 回到首頁</button>
       <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('sync-panel').remove()">繼續編輯</button>
     </div>
   `;
@@ -1224,9 +1211,16 @@ function showToast(msg, type){
   }, 2200);
 }
 
-// ── 啟動 ──
+// ── 啟動：由 manager 帶入身份（取消密碼；無參數就回首頁）──
+(function initEntry(){
+  const p=new URLSearchParams(location.search);
+  const store=p.get('store'), role=p.get('role');
+  if(role==='supervisor'){ state.role='supervisor'; state.store=''; state.manager=''; state.authed=true; }
+  else if(store){ state.role='store_manager'; state.store=store; state.manager=''; state.authed=true; }
+  else { location.replace('manager.html'); return; }
+  saveState();
+})();
 render();
-if(SYNC_URL && (state.store || state.role==='supervisor')) loadFromCloud();
 
 // ── 雲端(Cloudflare /api)：載入已匯入/已送出的技能與班別，本機評分優先 ──
 (async function(){
