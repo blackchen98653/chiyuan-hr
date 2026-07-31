@@ -10,7 +10,7 @@ window.CHIYUAN = (function () {
 /* ========== 1. API 設定（拿到金鑰後改這裡） ========================= */
 const CONFIG = {
   // false = 用下方樣本名冊預覽；true = 走雲端（Cloudflare Functions + Google 服務帳戶）
-  USE_CLOUD: false,
+  USE_CLOUD: true,
   API_BASE: "/api",   // 前端只呼叫自己的 /api/*，後端用服務帳戶讀寫 Google Sheets
 };
 
