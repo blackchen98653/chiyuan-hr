@@ -44,6 +44,9 @@
   input:focus,select:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
   select{background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2334503F' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'/></svg>");background-repeat:no-repeat;background-position:right 14px center;padding-right:40px}
 
+  .dashtop{display:flex;justify-content:flex-end;margin:0 0 10px}
+  .logout{font-family:inherit;font-size:13.5px;font-weight:800;color:var(--muted);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:8px 16px;cursor:pointer}
+  .logout:active{transform:translateY(1px)}
   .cta{
     width:100%;margin-top:6px;font-family:inherit;font-size:16.5px;font-weight:800;letter-spacing:.04em;cursor:pointer;
     color:#fff;background:var(--tea);border:none;border-radius:14px;padding:16px;
@@ -168,6 +171,7 @@
 
   <!-- ============ SCREEN 2: DASHBOARD ============ -->
   <section id="dash">
+    <div class="dashtop"><button class="logout" id="btnLogout">登出</button></div>
     <div class="welcome">
       <svg class="deco" width="90" height="90" viewBox="0 0 40 44"><path d="M8 12h24l-2.5 26a4 4 0 0 1-4 3.6H14.5a4 4 0 0 1-4-3.6L8 12Z" fill="#fff"/></svg>
       <div class="hi">哈囉，歡迎報到 👋</div>
@@ -281,6 +285,7 @@ $('submit').addEventListener('click', async ()=>{
 });
 $('nfBack').addEventListener('click', ()=>show('reg'));
 $('btnSubmit').addEventListener('click', submitSelf);
+$('btnLogout').addEventListener('click', ()=>{ CUR=null; $('nm').value=''; $('store').value=''; show('reg'); window.scrollTo(0,0); });
 
 let CUR = null, DRAFT = [], SAVED = "[]", justSent = false;
 function normSelf(a){ a = a || []; return new Array(9).fill(false).map((_,k)=>!!a[k]); }
