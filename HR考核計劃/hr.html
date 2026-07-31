@@ -71,10 +71,11 @@
   .skdetail.open{display:block}
   .skg{font-size:11px;font-weight:900;letter-spacing:.1em;margin:9px 0 5px}
   .skg:first-child{margin-top:0}
-  .skl{display:flex;flex-wrap:wrap;gap:5px 12px}
-  .ski{font-size:12.5px;display:inline-flex;align-items:center;gap:5px;color:var(--ink)}
-  .ski .dot{width:9px;height:9px;border-radius:2px;flex:none}
-  .ski .lv{color:var(--muted);font-size:11px}
+  .skl{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px 14px}
+  .skm{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px}
+  .skm-n{color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .skm-bar{display:inline-flex;gap:2px;flex:none}
+  .skm-bar i{width:5px;height:12px;border-radius:1px;background:#E7E1D5}
 
   /* 班別 */
   .shifts{display:flex;align-items:center;gap:7px;margin-top:11px;flex-wrap:wrap}
@@ -102,6 +103,8 @@
   .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
   .legend{font-size:11.5px;color:var(--muted);margin:6px 2px 14px;line-height:1.9}
   .legend .k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 8px}
+  .lgd{display:inline-flex;align-items:center;gap:4px;margin:0 12px 4px 0}
+  .lgd .skm-bar i{height:10px}
   .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:30px;letter-spacing:.03em}
 </style>
 </head>
@@ -164,7 +167,10 @@ async function init(){
   });
   $('fName').addEventListener('input',render);
 
-  $('legend').innerHTML = '技能等級：'+ORDER.map(k=>`<span class="k" style="background:${LV[k].color}"></span>${LV[k].label}`).join('');
+  $('legend').innerHTML = '技能等級（格數＝等級）：'+ORDER.map((k,idx)=>{
+    let bars=''; for(let n=0;n<5;n++) bars+=`<i${n<=idx?` style="background:${LV[k].color}"`:''}></i>`;
+    return `<span class="lgd"><span class="skm-bar">${bars}</span>${LV[k].label}</span>`;
+  }).join('');
   render();
 }
 
@@ -189,7 +195,9 @@ function skillBlockHTML(empId){
   let detail='';
   gkeys.forEach(gk=>{ const g=SK.GROUPS[gk];
     const items=g.skills.filter(sk=>ev[sk]&&LV[ev[sk]]).map(sk=>{ const lv=ev[sk];
-      return `<span class="ski"><span class="dot" style="background:${LV[lv].color}"></span>${SK.LABELS[sk]}<span class="lv">${LV[lv].label}</span></span>`;
+      const idx=ORDER.indexOf(lv), col=LV[lv].color;
+      let bars=''; for(let n=0;n<5;n++) bars+=`<i${n<=idx?` style="background:${col}"`:''}></i>`;
+      return `<span class="skm" title="${SK.LABELS[sk]}：${LV[lv].label}"><span class="skm-n">${SK.LABELS[sk]}</span><span class="skm-bar">${bars}</span></span>`;
     }).join('');
     if(items) detail+=`<div class="skg" style="color:${g.color}">${g.label}</div><div class="skl">${items}</div>`;
   });
