@@ -671,6 +671,7 @@ function personFromRow(r){
     hbDate: (r[8]!=null?String(r[8]).trim():""),  // 健檢日（大表第 8 欄）
     passed: isPass(r[12]),          // 新人護照考核（通過試用期）
     selfReport: parseSelf(r[16]),   // 新人自報（系統從新表 join）
+    ghp: (String(r[17]||"").trim()==="1"),  // GHP 宣導影片：店經理確認（雲端 GHP 分頁 join）
     drinkOn:false, eval:null,
   };
 }
@@ -736,6 +737,16 @@ const DataAPI = {
   },
   doneCount(p){    return this.liveTicks(p).filter(v=>v===true||v==="na").length; },
   pendingCount(p){ return this.liveTicks(p).filter(v=>v==="self").length; },
+
+  /* --- GHP 宣導影片（店經理確認新人已觀看） --- */
+  ghpOf(p){ return !!(p && p.ghp); },
+  saveGhp(p, done){
+    if(p) p.ghp = !!done;
+    if(CONFIG.USE_CLOUD){
+      fetch(`${CONFIG.API_BASE}/ghp`, {method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({id:p.id, store:p.store, name:p.name, done:!!done})}).catch(err=>console.error("GHP 寫回雲端失敗：",err));
+    }
+  },
 
   /* --- 考核紀錄（現存本機；接雲端寫入後改這裡） --- */
   loadEval(p){
