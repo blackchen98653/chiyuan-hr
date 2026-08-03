@@ -1213,11 +1213,12 @@ function showToast(msg, type){
   }, 2200);
 }
 
-// ── 啟動：由 manager 帶入身份（取消密碼；無參數就回首頁）──
+// ── 啟動：由 manager 帶入身份。店經理已在 manager 端過門市通行碼 → 直接放行；
+//    區督導入口需輸入區督導通行碼（9527）才進；無參數就回首頁 ──
 (function initEntry(){
   const p=new URLSearchParams(location.search);
   const store=p.get('store'), role=p.get('role');
-  if(role==='supervisor'){ state.role='supervisor'; state.store=''; state.manager=''; state.authed=true; }
+  if(role==='supervisor'){ state.role='supervisor'; state.store=''; state.manager=''; state.authed=false; _lockMode='supervisor'; }
   else if(store){ state.role='store_manager'; state.store=store; state.manager=''; state.authed=true; }
   else { location.replace('manager.html'); return; }
   saveState();
