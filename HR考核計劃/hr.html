@@ -118,6 +118,8 @@
   .ci.nk.pass{color:#fff;background:var(--tea);border-color:var(--tea)}
   .ci.nk.wait{color:var(--red);background:var(--red-soft);border-color:#F0C9C2}
 
+  .backbtn{display:inline-block;margin-bottom:12px;font-size:13px;font-weight:800;color:var(--tea,#34503F);background:#fff;border:1.5px solid #E4DED2;border-radius:999px;padding:7px 15px;text-decoration:none}
+  .backbtn:active{transform:translateY(1px)}
   .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
   .legend{font-size:11.5px;color:var(--muted);margin:6px 2px 14px;line-height:1.9}
   .legend .k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 8px}
@@ -177,15 +179,29 @@ async function init(){
     .filter(p=> SK.EVALUABLE_STORES.indexOf(p.store)>=0 );
 
   const wrap=$('fStore');
-  const mk=(v,l)=>{ const b=document.createElement('button'); b.dataset.v=v; b.textContent=l; if(v===curStore)b.classList.add('on'); wrap.appendChild(b); };
-  mk('','全部門市');
-  SK.EVALUABLE_STORES.forEach(s=>mk(s,s));
-  wrap.addEventListener('click',e=>{
-    const b=e.target.closest('button'); if(!b) return;
-    curStore=b.dataset.v;
-    [...wrap.children].forEach(x=>x.classList.toggle('on', x.dataset.v===curStore));
-    render();
-  });
+  // 店經理入口：?store=X → 鎖定單店「夥伴總覽」（同 HR 格式，只看本店）
+  const lockStore=new URLSearchParams(location.search).get('store')||'';
+  if(lockStore && SK.EVALUABLE_STORES.indexOf(lockStore)>=0){
+    curStore=lockStore;
+    wrap.style.display='none';                                   // 隱藏門市切換
+    document.querySelector('.eyebrow').textContent='店經理 · 夥伴總覽';
+    document.querySelector('.big').innerHTML='夥伴<span class="hl">總覽</span>';
+    document.querySelector('.lead').textContent='📍 '+curStore+'　本店所有夥伴的技能覆蓋、偏好班別、報到與新人考核狀態。';
+    const back=document.createElement('a');
+    back.href='manager.html?store='+encodeURIComponent(curStore)+'&to=menu';
+    back.className='backbtn'; back.textContent='‹ 回上一頁';
+    document.querySelector('.top').prepend(back);
+  } else {
+    const mk=(v,l)=>{ const b=document.createElement('button'); b.dataset.v=v; b.textContent=l; if(v===curStore)b.classList.add('on'); wrap.appendChild(b); };
+    mk('','全部門市');
+    SK.EVALUABLE_STORES.forEach(s=>mk(s,s));
+    wrap.addEventListener('click',e=>{
+      const b=e.target.closest('button'); if(!b) return;
+      curStore=b.dataset.v;
+      [...wrap.children].forEach(x=>x.classList.toggle('on', x.dataset.v===curStore));
+      render();
+    });
+  }
   $('fName').addEventListener('input',render);
 
   $('legend').innerHTML = '技能等級（格數＝等級）：'+ORDER.map((k,idx)=>{

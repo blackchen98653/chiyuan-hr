@@ -50,6 +50,9 @@
   .menu .mic svg{width:26px;height:26px;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .menu.a .mic svg{stroke:var(--tea)}
   .menu.b .mic svg{stroke:var(--sugar)}
+  .menu.c{cursor:pointer}
+  .menu.c .mic{background:#E4EEF6}
+  .menu.c .mic svg{stroke:#2E6FD8;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
   .menu .mt{flex:1;min-width:0}
   .menu .mt .mh{display:block;font-size:18px;font-weight:900;letter-spacing:.02em}
   .menu .mt .ms{display:block;font-size:12.5px;color:var(--muted);margin-top:2px}
@@ -279,6 +282,14 @@
       </div>
       <div class="mdesc">做過新人考核的項目會<b>自動帶入</b>，不用重複評。</div>
     </div>
+    <div class="menu c" id="goOverview">
+      <div class="mtop">
+        <span class="mic"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3 2.5-5 5.5-5s5.5 2 5.5 5"/><circle cx="17.5" cy="9.5" r="2.3"/><path d="M15 14.2c2.8-.5 5.5 1.2 5.5 4.3"/></svg></span>
+        <span class="mt"><span class="mh">夥伴總覽</span><span class="ms">本店所有夥伴的評核狀態</span></span>
+        <span class="mgo">›</span>
+      </div>
+      <div class="mdesc">和 HR 總覽相同格式：每位夥伴的<b>技能覆蓋、偏好班別、報到與新人考核狀態</b>一次看。</div>
+    </div>
     <p class="foot">HR - CHIYUAN</p>
   </section>
 
@@ -415,11 +426,17 @@ function toggleGhp(chip){
   const list=(ROSTER[st]||ROSTER[curStore]||[]);
   const p=list.find(x=>(id&&x.id===id))||list.find(x=>x.name===nm&&x.store===st);
   if(!p) return;
+  // 已通過新人考核 / 安全操作已達標 → GHP 由考核自動判定，不可手動取消
+  if(p.passed || (p.eval&&p.eval.levels&&p.eval.levels.safety>=2)){
+    showToast('GHP 已依新人考核「安全操作」自動判定');
+    return;
+  }
   const nv=!p.ghp; H.DataAPI.saveGhp(p,nv);
   showRoster();
   showToast(nv?'✓ GHP 已確認':'已取消 GHP 確認');
 }
 $('goSkills').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
+$('goOverview').addEventListener('click',()=>{ if(curStore) location.href='hr.html?store='+encodeURIComponent(curStore); });
 $('goOnboard').addEventListener('click', async ()=>{ await loadRoster(); showRoster(); });
 $('btnHome').addEventListener('click',()=>{
   if($('eval').style.display==='block'){ showRoster(); }          // 考核 → 回名單挑下一位
@@ -434,10 +451,15 @@ function show(name){
   $('btnSwitch').style.display = (name==='roster'||name==='eval') ? 'block':'none';
   window.scrollTo(0,0);
 }
-/* 從 skills「切換新人考核」帶 ?store= 回來 → 直接進該店新人考核；否則回首頁 */
+/* 帶 ?store= 回來：to=menu → 該店選單（夥伴總覽返回）；否則直接進該店新人考核（skills 切換用）；無參數 → 首頁 */
 (async function initFromUrl(){
-  const s=new URLSearchParams(location.search).get('store');
-  if(s && H.ALL_STORES.indexOf(s)>=0){ curStore=s; $('smStore').textContent=s; await loadRoster(); showRoster(); }
+  const q=new URLSearchParams(location.search);
+  const s=q.get('store');
+  if(s && H.ALL_STORES.indexOf(s)>=0){
+    curStore=s; $('smStore').textContent=s;
+    if(q.get('to')==='menu'){ show('storemenu'); }
+    else { await loadRoster(); showRoster(); }
+  }
   else show('home');
 })();
 
@@ -628,6 +650,10 @@ function submitEval(drinkOn){
     updated: prev ? new Date() : null
   };
   H.DataAPI.saveEval(curHire, curHire.eval);
+  // 安全操作達「確實遵守」(≥2)＝已完成 3 小時課程與 GHP 影片 → 自動確認 GHP 並同步雲端(給 HR 看)
+  if(curHire.eval.levels && curHire.eval.levels.safety!=null && curHire.eval.levels.safety>=2){
+    H.DataAPI.saveGhp(curHire, true);
+  }
   renderResult(curHire, curHire.eval.levels, curHire.eval.date);
 }
 function clearEval(h){
