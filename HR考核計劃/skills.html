@@ -69,9 +69,9 @@ body{padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 /* ── 評核 modal ── */
 .modal-back{position:fixed;inset:0;background:rgba(20,24,40,.6);backdrop-filter:blur(6px);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
 .modal-back.show{opacity:1;pointer-events:auto}
-.modal-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:18px 18px 0 0;z-index:51;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);max-height:90vh;display:flex;flex-direction:column}
+.modal-sheet{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-radius:18px 18px 0 0;z-index:51;transform:translateY(100%);transition:transform .25s cubic-bezier(.4,0,.2,1);max-height:calc(100vh - env(safe-area-inset-top) - 24px);max-height:calc(100dvh - env(safe-area-inset-top) - 24px);display:flex;flex-direction:column}
 .modal-sheet.show{transform:translateY(0)}
-.mhdr{padding:calc(16px + env(safe-area-inset-top)) 16px 14px;border-bottom:1px solid var(--border);background:var(--card);border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+.mhdr{padding:16px 16px 14px;border-bottom:1px solid var(--border);background:var(--card);border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.04)}
 .mhdr-handle{width:38px;height:4px;background:var(--border2);border-radius:2px;margin:0 auto 6px;cursor:pointer}
 .mhdr-info{flex:1;min-width:0}
 .mhdr-name{font-weight:900;font-size:17px;color:var(--text);line-height:1.2}
