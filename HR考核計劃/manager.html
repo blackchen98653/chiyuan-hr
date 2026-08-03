@@ -128,6 +128,7 @@
   .chkrow{display:flex;flex-wrap:nowrap;gap:4px;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
   .ci{position:relative;flex:1 1 0;min-width:0;max-width:72px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:9.5px;font-weight:800;color:#9A8F80;background:#F7F3EC;border:1px solid #EFE8DC;border-radius:8px;padding:5px 2px;letter-spacing:0}
   .ci .lb{max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:clip}
+  .ci .hbd{font-size:8px;font-weight:800;line-height:1;letter-spacing:-.02em;opacity:.95;margin-top:1px}
   .ci svg{width:11px;height:11px;flex:none;display:block}
   .ci .sq{fill:none;stroke:currentColor;stroke-width:2.6}
   /* 尚未繳交／登記 → 紅色醒目 */
@@ -140,9 +141,17 @@
   .ci.self .dt2{fill:#fff;stroke:none}
   .ci.on{color:#3E7A54;background:#E8F2EA;border-color:#CFE2D3}
   .ci.on svg{stroke:currentColor;stroke-width:3.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-  /* 即時提示（取代慢速的系統 title） */
-  .ci[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#2A2320;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;z-index:30;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-  .ci[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2A2320;z-index:30;pointer-events:none}
+  /* 桌機滑鼠：hover 顯示提示（手機改用點選彈窗，見 .citip） */
+  .ci{cursor:pointer}
+  @media (hover:hover){
+    .ci[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#2A2320;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;z-index:30;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+    .ci[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2A2320;z-index:30;pointer-events:none}
+  }
+  .ci:active{filter:brightness(.94)}
+  /* 點選提示彈窗（手機/桌機皆可） */
+  .citip{position:fixed;z-index:200;background:#2A2320;color:#fff;font-size:12.5px;font-weight:600;line-height:1.5;padding:9px 13px;border-radius:10px;max-width:min(230px,86vw);box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s;pointer-events:none}
+  .citip.show{opacity:1;transform:translateY(0)}
+  .citip::after{content:'';position:absolute;top:100%;left:var(--ax,50%);transform:translateX(-50%);border:6px solid transparent;border-top-color:#2A2320}
   .scale{display:flex;gap:5px}
   .scale button{flex:1;font-family:inherit;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--muted);background:#fff;border:1.5px solid var(--line);border-radius:10px;padding:9px 2px;transition:all .12s;line-height:1.25}
   .scale button .lv{display:block;font-size:10px;font-weight:800;color:var(--line);margin-bottom:2px}
@@ -303,12 +312,16 @@ const BUST = filled => filled
 
 const liveTicks   = p => H.DataAPI.liveTicks(p);
 const pendingCount= p => H.DataAPI.pendingCount(p);
+// 健檢日：2025/6/3→25/6/3；空白→未檢（健檢效期一年，顯示上次日期方便判斷是否過期）
+const shortHbDate = s => String(s||'').replace(/^20(\d\d)[/\-]/,'$1/');
+const hbLabel = p => (p&&p.hbDate) ? shortHbDate(p.hbDate) : '未檢';
 const chipsHTML = p => `<div class="chkrow">` + liveTicks(p).map((v,i)=>
-  `<span class="ci ${v==='na'?'na':v==='self'?'self':(v?'on':'no')}" data-tip="${FULL[i]}${v===true?'（HR 已登記）':v==='na'?'（免投保）':v==='self'?'（新人已回報，待 HR 核對）':'（尚未繳交／登記）'}"><span class="lb">${ABBR[i]}</span>`+
+  `<span class="ci ${v==='na'?'na':v==='self'?'self':(v?'on':'no')}" data-tip="${FULL[i]}${i===2?'（上次健檢日：'+ (p.hbDate||'未檢') +'）':v===true?'（HR 已登記）':v==='na'?'（免投保）':v==='self'?'（新人已回報，待 HR 核對）':'（尚未繳交／登記）'}"><span class="lb">${ABBR[i]}</span>`+
   (v==='na'?`<svg viewBox="0 0 24 24"><path class="xm" d="M6 6l12 12M18 6L6 18"/></svg>`
    : v==='self'?`<svg viewBox="0 0 24 24"><circle class="dt2" cx="12" cy="12" r="5"/></svg>`
    : v===true?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
      :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+
+  (i===2?`<span class="hbd">${hbLabel(p)}</span>`:'')+
   `</span>`).join('') + `</div>`;
 
 /* ===== 名冊（透過 DataAPI，之後自動改讀雲端） ===== */
@@ -359,6 +372,28 @@ $('btnCopy').addEventListener('click', async ()=>{
   }catch(e){ showToast('複製失敗，請長按網址手動複製'); }
 });
 function showToast(msg){ const t=$('toast'); if(!t) return; t.textContent=msg; t.classList.add('show'); clearTimeout(showToast._t); showToast._t=setTimeout(()=>t.classList.remove('show'),2000); }
+
+/* ===== 項目 chip：點選顯示說明彈窗（手機友善） ===== */
+const _citip=document.createElement('div'); _citip.className='citip'; document.body.appendChild(_citip);
+let _citipT;
+function showCitip(el){
+  const txt=el.getAttribute('data-tip'); if(!txt) return;
+  _citip.textContent=txt; _citip.classList.add('show');
+  _citip.style.left='0px'; _citip.style.top='-9999px';   // 先量尺寸
+  const r=el.getBoundingClientRect(), tw=_citip.offsetWidth, th=_citip.offsetHeight, m=8;
+  let left=Math.max(m, Math.min(r.left+r.width/2-tw/2, innerWidth-tw-m));
+  let top=r.top-th-10; if(top<m) top=r.bottom+10;
+  _citip.style.left=left+'px'; _citip.style.top=top+'px';
+  _citip.style.setProperty('--ax',(r.left+r.width/2-left)+'px');
+  clearTimeout(_citipT); _citipT=setTimeout(hideCitip,3500);
+}
+function hideCitip(){ _citip.classList.remove('show'); }
+document.addEventListener('click',e=>{
+  const chip=e.target.closest && e.target.closest('.ci[data-tip]');
+  if(chip){ e.stopPropagation(); showCitip(chip); }
+  else if(!(e.target.closest && e.target.closest('.citip'))) hideCitip();
+});
+window.addEventListener('scroll',hideCitip,true);
 $('goSkills').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
 $('goOnboard').addEventListener('click', async ()=>{ await loadRoster(); showRoster(); });
 $('btnHome').addEventListener('click',()=>{

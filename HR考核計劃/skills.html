@@ -372,6 +372,13 @@ function fmtTime(iso){
     return d.toLocaleString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   }catch(e){return iso}
 }
+// 某夥伴最後一次技能評核日期（M/D）；無則空字串
+function lastEvalLabel(empId){
+  const iso = state.evalMeta && state.evalMeta[empId];
+  if(!iso) return '';
+  const d = new Date(iso); if(isNaN(d)) return '';
+  return (d.getMonth()+1)+'/'+d.getDate();
+}
 
 // ════════════════════════════════════════════════════════════════════════
 // 6. 畫面渲染
@@ -691,7 +698,7 @@ function renderPartnerCard(p){
             <span class="partner-name">${p.name}</span>
             <span class="role-pill ${getRoleClass(p.role)}">${shortRole(p.role)}</span>
           </div>
-          <div class="partner-meta">${p.id||'—'} · 已評 ${c.done}/${SKILL_TOTAL} ${c.done===0?'<span style="color:var(--red);font-weight:800">　待開始</span>':''}</div>
+          <div class="partner-meta">${p.id||'—'} · 已評 ${c.done}/${SKILL_TOTAL}${c.done===0?' <span style="color:var(--red);font-weight:800">　待開始</span>':(lastEvalLabel(p.id)?' · 最後評核 '+lastEvalLabel(p.id):'')}</div>
         </div>
         <div style="text-align:right;flex-shrink:0">
           <div class="${lv.cls}" style="font-weight:900;font-size:16px;line-height:1">${lv.code}</div>
@@ -1234,6 +1241,10 @@ render();
     if(j && j.evals){
       state.evals  = Object.assign({}, j.evals,  state.evals  || {});
       state.shifts = Object.assign({}, j.shifts||{}, state.shifts || {});
+      // 每人最後評核時間（雲端 times 毫秒）→ 併入 evalMeta（取較新者）
+      if(j.times){ state.evalMeta=state.evalMeta||{};
+        Object.keys(j.times).forEach(id=>{ const iso=new Date(j.times[id]).toISOString();
+          if(!state.evalMeta[id] || new Date(iso)>new Date(state.evalMeta[id])) state.evalMeta[id]=iso; }); }
       saveState();
       render();
     }
