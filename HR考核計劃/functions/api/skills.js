@@ -2,13 +2,14 @@
 import { readRange, json } from "./_google.js";
 export async function onRequest({ env }) {
   try {
-    const evals = {}, times = {};
+    const evals = {}, times = {}, empTime = {};
     const rows = await readRange(env, "技能評核!A2:F"); // 時間,門市,主管,員工ID,技能,等級
     rows.forEach(r => {
       const t = Date.parse(r[0]) || 0, emp = String(r[3] || "").trim(), sk = String(r[4] || "").trim(), lv = String(r[5] || "").trim();
       if (!emp || !sk) return;
       const key = emp + "|" + sk;
       if (times[key] == null || t >= times[key]) { times[key] = t; (evals[emp] = evals[emp] || {})[sk] = lv; }
+      if (empTime[emp] == null || t > empTime[emp]) empTime[emp] = t;   // 每人最後評核時間
     });
     const shifts = {}, stime = {};
     const srows = await readRange(env, "班別!A2:E"); // 時間,員工ID,早,中,晚
@@ -20,6 +21,6 @@ export async function onRequest({ env }) {
         shifts[emp] = { morning: r[2] == 1, mid: r[3] == 1, night: r[4] == 1 };
       }
     });
-    return json({ evals, shifts });
-  } catch (e) { return json({ error: String(e), evals: {}, shifts: {} }); }
+    return json({ evals, shifts, times: empTime });
+  } catch (e) { return json({ error: String(e), evals: {}, shifts: {}, times: {} }); }
 }
