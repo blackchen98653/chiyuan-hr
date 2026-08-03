@@ -488,7 +488,7 @@ function showRoster(){
     [...finished].sort((a,b)=>a.join-b.join).forEach(h=>html+=rowHTML(h,false));
   }
   $('rBody').innerHTML=html;
-  document.querySelectorAll('[data-id]').forEach(el=>el.addEventListener('click',()=>{
+  $('rBody').querySelectorAll('.rtop.evalgo[data-id]').forEach(el=>el.addEventListener('click',()=>{
     curHire=(ROSTER[curStore]||[]).find(h=>h.id===el.dataset.id); openEval();
   }));
 }
@@ -518,12 +518,24 @@ function rowHTML(h,hi){
 }
 
 /* ===== screen 3: eval ===== */
+/* 未送出的考核草稿：點到一半離開也不清除（存本機，依門市+姓名） */
+function draftKey(h){ return `chiyuan:evaldraft:${h.store}:${h.name}`; }
+function loadDraft(h){ try{ const a=JSON.parse(localStorage.getItem(draftKey(h))||'null'); return (a&&a.levels)?a:null; }catch(e){ return null; } }
+function saveDraft(drinkOn){
+  try{
+    if(Object.keys(draft).length===0 && !(draftMemo||'').trim()){ localStorage.removeItem(draftKey(curHire)); return; }
+    localStorage.setItem(draftKey(curHire), JSON.stringify({levels:draft, memo:draftMemo, drinkOn:!!drinkOn, ts:Date.now()}));
+  }catch(e){}
+}
+function clearDraft(h){ try{ localStorage.removeItem(draftKey(h)); }catch(e){} }
 function openEval(){
   show('eval');
   if(curHire.passed && !curHire.eval){ renderLegacy(curHire); return; }
   if(curHire.eval){ renderResult(curHire, curHire.eval.levels, curHire.eval.date); return; }
-  draft={}; draftMemo="";
-  renderForm(curHire.drinkOn === true);
+  const saved=loadDraft(curHire);              // 有未送出的草稿就接續
+  draft = saved ? {...saved.levels} : {};
+  draftMemo = saved ? (saved.memo||"") : "";
+  renderForm(saved && saved.drinkOn!=null ? saved.drinkOn : (curHire.drinkOn === true));
 }
 function editEval(){
   if(!canEdit(curHire.eval)){ alert(`已超過 ${EDIT_HOURS} 小時修改期限，此考核已鎖定。如需更正請聯繫人資。`); return; }
@@ -597,6 +609,7 @@ function renderForm(drinkOn){
         if(wasOn){ delete draft[item.dataset.key]; }
         else { btn.classList.add('on'); draft[item.dataset.key]=parseInt(btn.dataset.lv); }
         recompute(drinkOn);
+        saveDraft(drinkOn);           // 每次點選即存草稿
       });
     });
   });
@@ -605,10 +618,11 @@ function renderForm(drinkOn){
     if(lv!=null){ const b=item.querySelector(`.scale button[data-lv="${lv}"]`); if(b) b.classList.add('on'); }
   });
   const memoEl=$('memo');
-  const upCnt=()=>{ draftMemo=memoEl.value; $('memoCnt').textContent=`${memoEl.value.length} 字`; };
+  const upCnt=()=>{ draftMemo=memoEl.value; $('memoCnt').textContent=`${memoEl.value.length} 字`; saveDraft(drinkOn); };
   memoEl.addEventListener('input',upCnt); upCnt();
   $('drinkSw').addEventListener('change',e=>{
     if(!e.target.checked){ delete draft.drink; delete draft.drinkmix; }
+    saveDraft(e.target.checked);
     renderForm(e.target.checked);
   });
   $('submitEval').addEventListener('click',()=>submitEval(drinkOn));
@@ -650,6 +664,7 @@ function submitEval(drinkOn){
     updated: prev ? new Date() : null
   };
   H.DataAPI.saveEval(curHire, curHire.eval);
+  clearDraft(curHire);   // 已送出 → 清掉暫存草稿
   // 安全操作達「確實遵守」(≥2)＝已完成 3 小時課程與 GHP 影片 → 自動確認 GHP 並同步雲端(給 HR 看)
   if(curHire.eval.levels && curHire.eval.levels.safety!=null && curHire.eval.levels.safety>=2){
     H.DataAPI.saveGhp(curHire, true);
@@ -659,6 +674,7 @@ function submitEval(drinkOn){
 function clearEval(h){
   h.eval=null; h.drinkOn=false;
   H.DataAPI.clearEval(h);
+  clearDraft(h);
 }
 function renderLegacy(h){
   $('eval').innerHTML=`
