@@ -27,9 +27,9 @@ const ALL_STORES = Object.values(STORES).flat();
    留空的門市 = 測試模式，免密碼直接進入。HR 總覽頁不設密碼。 */
 const STORE_PW = {
   "小巨蛋店":"twn001","師大店":"twn003","松江店":"twn005","忠孝店":"twn007",
-  "內湖店":"twn009","板橋店":"twn011","逢甲店":"twn013","台北車站店":"twn015",
-  "一中店":"twn017","光華店":"twn019","大安店":"twn021","頂溪店":"twn023",
-  "民權店":"twn025",
+  "內湖店":"twn009","板橋店":"twn0011","逢甲店":"twn0013","台北車站店":"twn0015",
+  "一中店":"twn0017","光華店":"twn0019","大安店":"twn0021","頂溪店":"twn0023",
+  "民權店":"twn0025",
 };
 
 /* ========== 4. 報到 Checklist 定義 ================================ */
@@ -634,7 +634,8 @@ const STORE_CODES = {
   '一中店':'twn0017',
   '光華店':'twn0019',
   '大安店':'twn0021',
-  '頂溪店':'twn0023'
+  '頂溪店':'twn0023',
+  '民權店':'twn0025'
 };
   const ALL_SKILL_KEYS = Object.keys(SKILL_LABELS);
   return { GROUPS:SKILL_GROUPS, LABELS:SKILL_LABELS, ICONS:SKILL_ICONS,
