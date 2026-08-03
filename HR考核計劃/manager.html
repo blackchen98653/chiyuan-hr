@@ -205,6 +205,10 @@
   .rdate{text-align:center;color:var(--muted);font-size:12px;margin-top:16px}
 
   .foot{text-align:center;color:var(--muted);font-size:11.5px;margin-top:30px;letter-spacing:.03em}
+  .pwbox{background:var(--card,#fff);border:1px solid var(--line);border-radius:16px;padding:20px 16px;margin-top:16px;box-shadow:var(--shadow)}
+  .pwbox .lab{display:block;font-size:14px;font-weight:800;color:var(--tea-deep);margin-bottom:4px}
+  .pwerr{min-height:18px;font-size:12.5px;font-weight:700;color:var(--red,#D9483A);margin:8px 2px 0}
+  .pwbox .cta{margin-top:12px}
   input[type=password]{width:100%;font-family:inherit;font-size:16px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;margin-top:6px}
   input[type=password]:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
   .err{color:#B4472E;font-size:13px;margin:10px 2px 0;display:none}
@@ -261,6 +265,18 @@
       </div>
     </div>
     <p class="foot">HR - CHIYUAN</p>
+  </section>
+
+  <!-- ===== LOCK: 門市通行碼 ===== -->
+  <section id="lock">
+    <div class="store-head"><span class="pin">🔒</span><span class="nm" id="lockStore">—</span></div>
+    <div class="pwbox">
+      <label class="lab">請輸入門市通行碼</label>
+      <input id="lockPw" type="password" inputmode="text" autocomplete="off" autocapitalize="off" placeholder="通行碼">
+      <div class="pwerr" id="lockErr"></div>
+      <button class="cta" id="lockGo">進入</button>
+    </div>
+    <p class="foot">通行碼由 HR 提供，僅限本店店經理使用。</p>
   </section>
 
   <!-- ===== STORE MENU: 該門市要做哪個考核 ===== -->
@@ -375,11 +391,39 @@ function canEdit(ev){ return hoursLeft(ev) > 0 || (ev.unlockUntil && ev.unlockUn
 /* ===== state ===== */
 let curStore=null, curHire=null, draft={}, draftMemo="";
 
+/* ===== 門市通行碼 ===== */
+const UNLOCK_KEY='chiyuan:mgr:unlocked';
+function unlockedSet(){ try{ return new Set(JSON.parse(sessionStorage.getItem(UNLOCK_KEY)||'[]')); }catch(e){ return new Set(); } }
+function isUnlocked(s){ const pw=(H.STORE_PW||{})[s]; if(!pw) return true; return unlockedSet().has(s); }
+function markUnlocked(s){ const set=unlockedSet(); set.add(s); try{ sessionStorage.setItem(UNLOCK_KEY, JSON.stringify([...set])); }catch(e){} }
+let _pendingDest='storemenu';
+async function routeTo(dest){
+  if(dest==='roster'){ await loadRoster(); showRoster(); }
+  else show('storemenu');
+}
+// 進入某門市：有設密碼且尚未解鎖 → 先跳通行碼；否則直接進目的頁
+function enterStore(s, dest){
+  curStore=s; $('smStore').textContent=s; dest=dest||'storemenu';
+  if(isUnlocked(s)){ routeTo(dest); }
+  else { _pendingDest=dest; showLock(s); }
+}
+function showLock(s){
+  $('lockStore').textContent=s; $('lockErr').textContent=''; $('lockPw').value='';
+  show('lock'); setTimeout(()=>$('lockPw').focus(),60);
+}
+function tryUnlock(){
+  const pw=(H.STORE_PW||{})[curStore];
+  if($('lockPw').value.trim()===String(pw)){ markUnlocked(curStore); routeTo(_pendingDest||'storemenu'); }
+  else { $('lockErr').textContent='通行碼錯誤，請再試一次'; $('lockPw').select(); }
+}
+$('lockGo').addEventListener('click',tryUnlock);
+$('lockPw').addEventListener('keydown',e=>{ if(e.key==='Enter') tryUnlock(); });
+
 /* ===== 首頁：門市格 + 區督導 ===== */
 (function fillStoreGrid(){
   const grid=$('storeGrid');
   H.ALL_STORES.forEach(s=>{ const b=document.createElement('button'); b.textContent=s;
-    b.addEventListener('click',()=>{ curStore=s; $('smStore').textContent=s; show('storemenu'); });
+    b.addEventListener('click',()=>{ enterStore(s); });
     grid.appendChild(b);
   });
 })();
@@ -441,12 +485,13 @@ $('goOnboard').addEventListener('click', async ()=>{ await loadRoster(); showRos
 $('btnHome').addEventListener('click',()=>{
   if($('eval').style.display==='block'){ showRoster(); }          // 考核 → 回名單挑下一位
   else if($('roster').style.display==='block'){ show('storemenu'); } // 名單 → 該店選單
+  else if($('lock').style.display==='block'){ curStore=null; show('home'); } // 通行碼 → 首頁
   else if($('storemenu').style.display==='block'){ curStore=null; show('home'); } // 選單 → 首頁
   else { show('home'); }
 });
 $('btnSwitch').addEventListener('click',()=>{ if(curStore) location.href='skills.html?store='+encodeURIComponent(curStore); });
 function show(name){
-  ['home','storemenu','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
+  ['home','lock','storemenu','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
   $('btnHome').style.display = name==='home' ? 'none':'block';
   $('btnSwitch').style.display = (name==='roster'||name==='eval') ? 'block':'none';
   window.scrollTo(0,0);
@@ -456,9 +501,7 @@ function show(name){
   const q=new URLSearchParams(location.search);
   const s=q.get('store');
   if(s && H.ALL_STORES.indexOf(s)>=0){
-    curStore=s; $('smStore').textContent=s;
-    if(q.get('to')==='menu'){ show('storemenu'); }
-    else { await loadRoster(); showRoster(); }
+    enterStore(s, q.get('to')==='menu' ? 'storemenu' : 'roster');
   }
   else show('home');
 })();
