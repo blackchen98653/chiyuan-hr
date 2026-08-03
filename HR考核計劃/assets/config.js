@@ -16,7 +16,7 @@ const CONFIG = {
 
 /* ========== 2. 門市清單 ============================================ */
 const STORES = {
-  "北市":  ["小巨蛋店","師大店","松江店","忠孝店","內湖店","台北車站店","大安店","光華店"],
+  "北市":  ["小巨蛋店","師大店","松江店","忠孝店","內湖店","台北車站店","大安店","光華店","民權店"],
   "新北市":["頂溪店","板橋店"],
   "中區":  ["一中店","逢甲店"],
 };
@@ -397,7 +397,7 @@ const ONBOARD_TO_SKILL = {
   // 服儀確認/服務態度/服務三用語/品質確保/門店表單 → SM 無對應，不帶入
 };
 const ONBOARD_LEVEL_TO_SM = ['rusty', 'basic', 'normal', 'skilled', 'expert'];
-const EVALUABLE_STORES = ['小巨蛋店','師大店','松江店','忠孝店','內湖店','台北車站店','大安店','光華店','板橋店','頂溪店','一中店','逢甲店'];
+const EVALUABLE_STORES = ['小巨蛋店','師大店','松江店','忠孝店','內湖店','台北車站店','大安店','光華店','民權店','板橋店','頂溪店','一中店','逢甲店'];
 const EMPLOYEES = [
   // 小巨蛋店
   {id:'CY0024',name:'劉亭妤',store:'小巨蛋店',role:'店經理'},
@@ -668,6 +668,7 @@ function personFromRow(r){
     role: String(r[4]||"").trim(),   // 職稱（店經理/儲備店經理/正職門店人員/兼職人員…）
     job: (String(r[4]).indexOf("兼")>=0 || String(r[4]).toUpperCase()==="PT") ? "PT" : "FT",
     chk: { hb:hbVal(r[5]), cz:toBool(r[6]), jk:toBool(r[7]), ld:toBool(r[9]) },  // 健保/存摺/健檢/契約
+    hbDate: (r[8]!=null?String(r[8]).trim():""),  // 健檢日（大表第 8 欄）
     passed: isPass(r[12]),          // 新人護照考核（通過試用期）
     selfReport: parseSelf(r[16]),   // 新人自報（系統從新表 join）
     drinkOn:false, eval:null,
@@ -779,9 +780,19 @@ const DataAPI = {
     try{
       const cur=this.getSkillState()||{};
       cur.evals=j.evals||{}; cur.shifts=j.shifts||{}; cur.updated=j.updated||cur.updated;
+      // 每人最後評核時間（雲端 times 為毫秒）→ 併入 evalMeta（取較新者）
+      if(j.times){ cur.evalMeta=cur.evalMeta||{};
+        Object.keys(j.times).forEach(id=>{ const iso=new Date(j.times[id]).toISOString();
+          if(!cur.evalMeta[id] || new Date(iso)>new Date(cur.evalMeta[id])) cur.evalMeta[id]=iso; }); }
       localStorage.setItem("skill_eval_v2", JSON.stringify(cur));
       return true;
     }catch(e){ return false; }
+  },
+  // 某員工「最後一次技能評核」時間（Date 或 null）
+  lastSkillEval(empId){
+    const st=this.getSkillState()||{};
+    const iso=(st.evalMeta&&st.evalMeta[empId])||null;
+    if(!iso) return null; const d=new Date(iso); return isNaN(d)?null:d;
   },
   // 取某員工的新人考核（USE_CLOUD 時走 /api/onboard；技能評核帶入用）
   async fetchOnboard(person){
