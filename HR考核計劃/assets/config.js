@@ -154,6 +154,7 @@ const EVAL_ITEMS = [
     desc:[
       "1. 遵循食品安全衛生規範，包括戴口罩、手套。",
       "2. 避免危險行為，以安全方式按流程使用器具。",
+      "3. 完成 3 小時課程與食品良好衛生規範準則影片。",
     ]},
   {key:"form",sec:"後場",name:"門店表單認識填寫",w:5,icon:"form",
     lv:["未接觸","需人協助","可獨立","正確完整","主動提醒"],
@@ -738,8 +739,15 @@ const DataAPI = {
   doneCount(p){    return this.liveTicks(p).filter(v=>v===true||v==="na").length; },
   pendingCount(p){ return this.liveTicks(p).filter(v=>v==="self").length; },
 
-  /* --- GHP 宣導影片（店經理確認新人已觀看） --- */
-  ghpOf(p){ return !!(p && p.ghp); },
+  /* --- GHP 宣導影片（食品良好衛生規範）--- */
+  // 完成判定：①已通過新人考核 → 預設打勾；②新人考核「安全操作」達「確實遵守」(≥2)含完成3小時課程與GHP影片；③店經理手動/雲端確認
+  ghpOf(p){
+    if(!p) return false;
+    if(p.passed) return true;                                   // 已通過新人考核 → 預設完成
+    const lv = p.eval && p.eval.levels && p.eval.levels.safety; // 新人考核安全操作等級(0-4)
+    if(lv!=null && lv>=2) return true;
+    return !!p.ghp;                                             // 雲端/手動確認
+  },
   saveGhp(p, done){
     if(p) p.ghp = !!done;
     if(CONFIG.USE_CLOUD){
