@@ -104,9 +104,16 @@
   .ci.self .dt2{fill:#fff;stroke:none}
   .ci.on{color:#3E7A54;background:#E8F2EA;border-color:#CFE2D3}
   .ci.on svg{stroke:currentColor;stroke-width:3.6;fill:none;stroke-linecap:round;stroke-linejoin:round}
-  /* 即時提示 */
-  .ci[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#2A2320;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;z-index:30;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.18)}
-  .ci[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2A2320;z-index:30;pointer-events:none}
+  /* 桌機滑鼠 hover 提示；手機改用點選彈窗（.citip） */
+  .ci{cursor:pointer}
+  @media (hover:hover){
+    .ci[data-tip]:hover::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 7px);left:50%;transform:translateX(-50%);background:#2A2320;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;padding:5px 9px;border-radius:7px;z-index:30;pointer-events:none;box-shadow:0 4px 12px rgba(0,0,0,.18)}
+    .ci[data-tip]:hover::before{content:'';position:absolute;bottom:calc(100% + 2px);left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#2A2320;z-index:30;pointer-events:none}
+  }
+  .ci:active{filter:brightness(.94)}
+  .citip{position:fixed;z-index:200;background:#2A2320;color:#fff;font-size:12.5px;font-weight:600;line-height:1.5;padding:9px 13px;border-radius:10px;max-width:min(230px,86vw);box-shadow:0 8px 24px rgba(0,0,0,.3);opacity:0;transform:translateY(4px);transition:opacity .14s,transform .14s;pointer-events:none}
+  .citip.show{opacity:1;transform:translateY(0)}
+  .citip::after{content:'';position:absolute;top:100%;left:var(--ax,50%);transform:translateX(-50%);border:6px solid transparent;border-top-color:#2A2320}
   .ci.nk{border-style:solid}
   .ci.nk.pass{color:#fff;background:var(--tea);border-color:var(--tea)}
   .ci.nk.wait{color:var(--red);background:var(--red-soft);border-color:#F0C9C2}
@@ -215,7 +222,9 @@ function skillBlockHTML(empId){
     }).join('');
     if(items) detail+=`<div class="skg" style="color:${g.color}">${g.label}</div><div class="skl">${items}</div>`;
   });
-  return { html:`<div class="gcov"><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">${chips}</div><span class="gcov-hint">▸ 明細</span></div><div class="skdetail">${detail}</div>`, cov };
+  const last=H.DataAPI.lastSkillEval(empId);
+  const lastTxt=last?`最後評核 ${last.getMonth()+1}/${last.getDate()}`:'';
+  return { html:`<div class="gcov"><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">${chips}</div><span class="gcov-hint">${lastTxt?lastTxt+'　':''}▸ 明細</span></div><div class="skdetail">${detail}</div>`, cov };
 }
 // 偏好班別（放名字旁，只顯示有設定的）
 function prefShiftHTML(empId){
@@ -235,6 +244,11 @@ function chipsHTML(nb){
      : v===true?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
        :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+
     `</span>`).join('');
+  // GHP 宣導影片（店經理確認）
+  const gon=H.DataAPI.ghpOf(nb);
+  chips += `<span class="ci ${gon?'on':'no'}" data-tip="GHP 宣導影片${gon?'（店經理已確認）':'（尚未確認）'}"><span class="lb">GHP</span>`+
+    (gon?`<svg viewBox="0 0 24 24"><polyline points="4 12 10 18 20 6"/></svg>`
+        :`<svg viewBox="0 0 24 24"><rect class="sq" x="4.5" y="4.5" width="15" height="15" rx="3"/></svg>`)+`</span>`;
   // 後方新增「新考」= 新人考核是否通過
   const pass=isPassed(nb);
   chips += `<span class="ci nk ${pass?'pass':'wait'}" data-tip="新人考核${pass?'已通過':'尚未通過'}"><span class="lb">新考</span>`+
@@ -312,6 +326,28 @@ function render(){
 }
 
 init();
+
+/* ===== chip 點選顯示說明彈窗（手機友善） ===== */
+const _citip=document.createElement('div'); _citip.className='citip'; document.body.appendChild(_citip);
+let _citipT;
+function showCitip(el){
+  const txt=el.getAttribute('data-tip'); if(!txt) return;
+  _citip.textContent=txt; _citip.classList.add('show');
+  _citip.style.left='0px'; _citip.style.top='-9999px';
+  const r=el.getBoundingClientRect(), tw=_citip.offsetWidth, th=_citip.offsetHeight, m=8;
+  let left=Math.max(m, Math.min(r.left+r.width/2-tw/2, innerWidth-tw-m));
+  let top=r.top-th-10; if(top<m) top=r.bottom+10;
+  _citip.style.left=left+'px'; _citip.style.top=top+'px';
+  _citip.style.setProperty('--ax',(r.left+r.width/2-left)+'px');
+  clearTimeout(_citipT); _citipT=setTimeout(hideCitip,3500);
+}
+function hideCitip(){ _citip.classList.remove('show'); }
+document.addEventListener('click',e=>{
+  const chip=e.target.closest && e.target.closest('.ci[data-tip]');
+  if(chip){ e.stopPropagation(); showCitip(chip); }
+  else if(!(e.target.closest && e.target.closest('.citip'))) hideCitip();
+});
+window.addEventListener('scroll',hideCitip,true);
 </script>
 </body>
 </html>
