@@ -531,8 +531,8 @@ function showRoster(){
     [...finished].sort((a,b)=>a.join-b.join).forEach(h=>html+=rowHTML(h,false));
   }
   $('rBody').innerHTML=html;
-  $('rBody').querySelectorAll('.rtop.evalgo[data-id]').forEach(el=>el.addEventListener('click',()=>{
-    curHire=(ROSTER[curStore]||[]).find(h=>h.id===el.dataset.id); openEval();
+  $('rBody').querySelectorAll('.rtop.evalgo[data-key]').forEach(el=>el.addEventListener('click',()=>{
+    curHire=(ROSTER[curStore]||[])[parseInt(el.dataset.key,10)]; openEval();
   }));
 }
 function statHTML(h){
@@ -548,7 +548,7 @@ function statHTML(h){
 }
 function rowHTML(h,hi){
   return `<div class="row ${hi?'duehi':''} ${h.passed?'doneRow':''}">
-    <span class="rtop evalgo" data-id="${h.id}">
+    <span class="rtop evalgo" data-key="${(ROSTER[curStore]||[]).indexOf(h)}">
       <span class="av">${BUST(h.passed || !!h.eval)}</span>
       <span class="who">
         <span class="n"><span class="nm">${h.name}</span><span class="job ${h.job==='PT'?'pt':''}">${h.job==='PT'?'兼職':'正職'}</span>${pendingCount(h)?`<span class="pend">待核對 ${pendingCount(h)}</span>`:''}</span>
