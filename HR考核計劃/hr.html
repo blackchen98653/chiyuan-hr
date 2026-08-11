@@ -120,6 +120,17 @@
 
   .backbtn{display:inline-block;margin-bottom:12px;font-size:13px;font-weight:800;color:var(--tea,#34503F);background:#fff;border:1.5px solid #E4DED2;border-radius:999px;padding:7px 15px;text-decoration:none}
   .backbtn:active{transform:translateY(1px)}
+  /* 建議調整薪資提醒 */
+  #raiseBanner{display:none}
+  .raise-banner{display:flex;align-items:center;gap:10px;background:#EAF5EE;border:1.5px solid #B9DCC5;border-radius:14px;padding:12px 14px;margin:2px 0 14px}
+  .raise-banner.active{background:#E1F0E7;border-color:#8FCBA5}
+  .raise-banner .rb-ic{font-size:20px;flex:none}
+  .raise-banner .rb-txt{flex:1;font-size:13.5px;color:#2C5A3E;font-weight:700;line-height:1.4}
+  .raise-banner .rb-txt b{color:#256B41;font-size:15px}
+  .raise-banner .rb-btn{flex:none;font-family:inherit;font-size:12.5px;font-weight:800;color:#fff;background:#3E7A54;border:none;border-radius:999px;padding:8px 14px;cursor:pointer}
+  .raise-banner .rb-btn:active{transform:translateY(1px)}
+  .raisebadge{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:#3E7A54;border-radius:6px;padding:2px 8px;margin-left:6px;white-space:nowrap;box-shadow:0 1px 4px rgba(62,122,84,.3)}
+  .row.needraise{box-shadow:inset 4px 0 0 #3E7A54, var(--shadow,0 1px 3px rgba(0,0,0,.06))}
   .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
   .legend{font-size:11.5px;color:var(--muted);margin:6px 2px 14px;line-height:1.9}
   .legend .k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 8px}
@@ -137,6 +148,8 @@
   </div>
 
   <div class="stats" id="stats"></div>
+
+  <div id="raiseBanner"></div>
 
   <div class="storebtns" id="fStore"></div>
   <div class="ctrl"><input id="fName" type="text" placeholder="搜尋姓名…"></div>
@@ -168,9 +181,10 @@ function storeInfo(raw){
   return {store:raw, tag:''};
 }
 
-let PEOPLE=[], STAFF=[], curStore='';
+let PEOPLE=[], STAFF=[], curStore='', onlyRaise=false;
 async function init(){
   await H.DataAPI.syncSkillsToLocal();   // 雲端模式：先把技能/班別抓進本機再顯示
+  await H.DataAPI.fetchSalary();          // 薪資（判斷建議加薪）
   PEOPLE = await H.DataAPI.getAll();
   PEOPLE.forEach(p=>{ const e=H.DataAPI.loadEval(p); if(e){ p.eval=e; p.drinkOn=!!e.drinkOn; } });
   // 員工清單＝大表在職名單（加人/刪人即時反映）；只取 12 門市
@@ -273,16 +287,18 @@ function chipsHTML(nb){
   return `<div class="chkrow">${chips}</div>`;
 }
 
+function toggleOnlyRaise(){ onlyRaise=!onlyRaise; render(); }
 function rowHTML(emp){
   const [rl,rc]=shortRole(emp.role);
   const {html:skblock,cov}=skillBlockHTML(emp.id);
   const nb=isNewbie(emp)?emp:null;
   const av=emp.name?emp.name[emp.name.length-1]:'?';
-  return `<div class="row">
+  const raise=H.DataAPI.raiseFor(emp);
+  return `<div class="row${raise?' needraise':''}">
     <div class="rtop">
       <span class="av">${av}</span>
       <span class="who">
-        <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}${prefShiftHTML(emp.id)}</span>
+        <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}${raise?`<span class="raisebadge">💰 建議加薪 ${raise}</span>`:''}${prefShiftHTML(emp.id)}</span>
         <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?'　到職 '+fmt(nb.join):''}</span>
       </span>
       <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/${cov.total}</div></span>
@@ -297,6 +313,17 @@ function render(){
   let list=STAFF.slice();
   if(curStore) list=list.filter(e=>e.store===curStore);
   if(fn) list=list.filter(e=>e.name.includes(fn));
+
+  // 建議調整薪資提醒（依目前門市範圍計數）
+  const raiseScope=(curStore?STAFF.filter(e=>e.store===curStore):STAFF).filter(e=>H.DataAPI.raiseFor(e));
+  const rb=$('raiseBanner');
+  if(raiseScope.length){
+    rb.style.display='block';
+    rb.className='raise-banner'+(onlyRaise?' active':'');
+    rb.innerHTML=`<span class="rb-ic">💰</span><span class="rb-txt"><b>${raiseScope.length} 位</b>夥伴通過考核，建議調整薪資</span>`+
+      `<button class="rb-btn" onclick="toggleOnlyRaise()">${onlyRaise?'顯示全部':'只看這些'}</button>`;
+  } else { rb.style.display='none'; onlyRaise=false; }
+  if(onlyRaise) list=list.filter(e=>H.DataAPI.raiseFor(e));
 
   // 統計（依目前門市篩選，不受姓名搜尋影響）
   let base=STAFF.slice(); if(curStore) base=base.filter(e=>e.store===curStore);
