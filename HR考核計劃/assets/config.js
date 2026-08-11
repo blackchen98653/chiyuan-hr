@@ -698,6 +698,7 @@ async function fetchRoster(){
 }
 
 let _cache = null;
+let _salById = {}, _salByName = {};
 const DataAPI = {
   async getAll(force){
     if (!CONFIG.USE_CLOUD) return SAMPLE_PEOPLE;
@@ -744,6 +745,29 @@ const DataAPI = {
   },
   doneCount(p){    return this.liveTicks(p).filter(v=>v===true||v==="na").length; },
   pendingCount(p){ return this.liveTicks(p).filter(v=>v==="self").length; },
+
+  /* --- 薪資（月薪本薪/職獎、時薪；供 manager 卡片顯示與建議加薪） --- */
+  async fetchSalary(){
+    if(!CONFIG.USE_CLOUD) return false;
+    if(this._salLoaded) return true;
+    try{
+      const j=await (await fetch(`${CONFIG.API_BASE}/salary`)).json();
+      _salById={}; _salByName={};
+      (j.salary||[]).forEach(s=>{ if(s.id) _salById[s.id]=s; if(s.name) _salByName[(s.name||'')+'|'+(s.store||'')]=s; });
+      this._salLoaded=true; return true;
+    }catch(e){ return false; }
+  },
+  salaryOf(p){ if(!p) return null; return (p.id&&_salById[p.id]) || _salByName[(p.name||'')+'|'+(p.store||'')] || null; },
+  // 建議加薪：需已通過新人考核。正職 本薪≤31000 且 職獎=0 → '正職+1,000'；兼職 時薪<210 → '時薪+10'；否則 null
+  raiseFor(p){
+    const s=this.salaryOf(p); if(!s) return null;
+    const passed = p.passed || (p.eval && score(p.eval.levels, p.job, p.drinkOn===true)>=PASS);
+    if(!passed) return null;
+    const hourly = s.type==='時薪制' || (s.hourly!=null && s.base==null);
+    if(hourly){ return (s.hourly!=null && s.hourly<210) ? '時薪+10' : null; }
+    if(s.base!=null && s.base<=31000 && !(s.bonus>0)) return '正職+1,000';
+    return null;
+  },
 
   /* --- GHP 宣導影片（食品良好衛生規範）--- */
   // 完成判定：①已通過新人考核 → 預設打勾；②新人考核「安全操作」達「確實遵守」(≥2)含完成3小時課程與GHP影片；③店經理手動/雲端確認
