@@ -20,7 +20,7 @@
   body{font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;background:var(--paper);color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
   .wrap{max-width:480px;margin:0 auto;padding:0 18px 64px;min-height:100vh}
 
-  .top{padding:28px 4px 14px;display:flex;align-items:center;justify-content:space-between}
+  .top{padding:28px 4px 14px;display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
   .eyebrow{font-size:11px;letter-spacing:.28em;color:var(--sugar);text-transform:uppercase;font-weight:800}
   .back{font-size:13px;font-weight:700;color:var(--tea);background:none;border:none;cursor:pointer;padding:6px 2px;display:none}
   .back::before{content:"‹ "}
@@ -219,6 +219,7 @@
   .hbtn{font-family:inherit;font-size:15px;font-weight:800;color:var(--tea);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 16px;cursor:pointer}
   .hbtn:active{transform:translateY(1px)}
   .hbtn.alt{color:#8A5A1C;border-color:#EAD9BE;background:var(--sugar-soft)}
+  .hbtn.out{color:#C0392B;border-color:#E7C3BC;background:#FBEEEC;padding:11px 13px}
   /* 門市格 */
   .storegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:18px}
   @media(max-width:380px){.storegrid{grid-template-columns:repeat(2,1fr)}}
@@ -245,6 +246,7 @@
   <div class="top">
     <button class="hbtn" id="btnHome">‹ 上一頁</button>
     <button class="hbtn alt" id="btnSwitch">切換技能評核 ›</button>
+    <button class="hbtn out" id="btnLogout">登出 ⎋</button>
   </div>
 
   <!-- ===== HOME: 選門市 + 區督導 ===== -->
@@ -496,8 +498,15 @@ function show(name){
   ['home','lock','storemenu','roster','eval'].forEach(x=>$(x).style.display = x===name?'block':'none');
   $('btnHome').style.display = name==='home' ? 'none':'block';
   $('btnSwitch').style.display = (name==='roster'||name==='eval') ? 'block':'none';
+  // 已用通行碼進入的門市 → 顯示登出鈕（登出後再進要重新輸入通行碼）
+  $('btnLogout').style.display = (['storemenu','roster','eval'].indexOf(name)>=0 && (H.STORE_PW||{})[curStore]) ? 'block':'none';
   window.scrollTo(0,0);
 }
+$('btnLogout').addEventListener('click',()=>{
+  if(curStore){ const set=unlockedSet(); set.delete(curStore); try{ sessionStorage.setItem(UNLOCK_KEY, JSON.stringify([...set])); }catch(e){} }
+  curStore=null; show('home');
+  showToast('已登出，再進入需重新輸入通行碼');
+});
 /* 帶 ?store= 回來：to=menu → 該店選單（夥伴總覽返回）；否則直接進該店新人考核（skills 切換用）；無參數 → 首頁 */
 (async function initFromUrl(){
   const q=new URLSearchParams(location.search);

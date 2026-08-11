@@ -598,7 +598,7 @@ function renderMain(){
     : `<div class="tag-store">${state.store}</div>`;
   let html = `
     <div class="navbar">
-      <button class="nbtn" onclick="location.href='manager.html'">‹ 回到首頁</button>
+      <button class="nbtn" onclick="location.href='${isSup ? 'manager.html' : 'manager.html?store='+encodeURIComponent(state.store)+'&to=menu'}'">‹ 回到上一頁</button>
       ${isSup ? '' : `<button class="nbtn alt" onclick="location.href='manager.html?store=${encodeURIComponent(state.store)}'">切換新人考核 ›</button>`}
     </div>
     <div class="tophdr">
@@ -651,7 +651,7 @@ function renderMain(){
 
   html += `
     <div class="bottom-bar">
-      <button class="btn btn-secondary" onclick="logoutAndHome()">🏠 回到首頁</button>
+      <button class="btn btn-secondary" onclick="logoutAndHome()">‹ 回到上一頁</button>
       <button class="btn btn-primary" onclick="submitEval()">📤 送出評核 (${totalDone}/${partners.length})</button>
     </div>
 
@@ -887,8 +887,9 @@ function changeStore(){
 // 之前這裡完全沒有確認，手滑點到就整店資料歸零。現在比照 changeStore() 的做法先跳確認，
 // 且只要本機還有任何評核資料就明確警告會消失。
 function logoutAndHome(){
-  // 評核已存本機、送出時同步雲端；直接回首頁即可（不清資料）
-  location.href = 'manager.html';
+  // 評核已存本機、送出時同步雲端；回上一頁（店經理→該店選單；區督導→首頁）
+  const isSup = state.role==='supervisor';
+  location.href = isSup ? 'manager.html' : ('manager.html?store='+encodeURIComponent(state.store)+'&to=menu');
 }
 
 // ── 送出評核 (生成同步碼) ──
@@ -935,7 +936,7 @@ function submitEval(){
       ☁️ <b>正在同步到雲端</b>，總部戰情室按「同步雲端評核」就會更新
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
-      <button class="btn btn-primary" style="width:100%" onclick="logoutAndHome()">🏠 完成評核 · 回到首頁</button>
+      <button class="btn btn-primary" style="width:100%" onclick="logoutAndHome()">✓ 完成評核 · 回到上一頁</button>
       <button class="btn btn-secondary" style="width:100%" onclick="document.getElementById('sync-panel').remove()">繼續編輯</button>
     </div>
   `;
