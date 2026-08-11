@@ -130,6 +130,7 @@
   .raise-banner .rb-btn{flex:none;font-family:inherit;font-size:12.5px;font-weight:800;color:#fff;background:#3E7A54;border:none;border-radius:999px;padding:8px 14px;cursor:pointer}
   .raise-banner .rb-btn:active{transform:translateY(1px)}
   .raisebadge{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:#3E7A54;border-radius:6px;padding:2px 8px;margin-left:6px;white-space:nowrap;box-shadow:0 1px 4px rgba(62,122,84,.3)}
+  .who .sal{display:block;font-size:11.5px;font-weight:800;color:#8A6D3B;margin-top:3px;line-height:1.4}
   .row.needraise{box-shadow:inset 4px 0 0 #3E7A54, var(--shadow,0 1px 3px rgba(0,0,0,.06))}
   .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
   .legend{font-size:11.5px;color:var(--muted);margin:6px 2px 14px;line-height:1.9}
@@ -288,6 +289,16 @@ function chipsHTML(nb){
 }
 
 function toggleOnlyRaise(){ onlyRaise=!onlyRaise; render(); }
+const nf = n => (n==null?'—':Number(n).toLocaleString('en-US'));
+// 目前薪資：正職 本薪・伙食・職獎；兼職 時薪
+function salLineHTML(emp){
+  const s=H.DataAPI.salaryOf(emp); if(!s) return '';
+  const hourly = s.type==='時薪制' || (s.hourly!=null && s.base==null);
+  let info='';
+  if(hourly){ if(s.hourly==null) return ''; info=`時薪 ${nf(s.hourly)}`; }
+  else { if(s.base==null) return ''; info=`本薪 ${nf(s.base)}・伙食 ${nf(s.food||0)}・職獎 ${nf(s.bonus||0)}`; }
+  return `<span class="sal">💰 ${info}</span>`;
+}
 function rowHTML(emp){
   const [rl,rc]=shortRole(emp.role);
   const {html:skblock,cov}=skillBlockHTML(emp.id);
@@ -300,6 +311,7 @@ function rowHTML(emp){
       <span class="who">
         <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}${raise?`<span class="raisebadge">💰 建議加薪 ${raise}</span>`:''}${prefShiftHTML(emp.id)}</span>
         <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?'　到職 '+fmt(nb.join):''}</span>
+        ${salLineHTML(emp)}
       </span>
       <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/${cov.total}</div></span>
     </div>
