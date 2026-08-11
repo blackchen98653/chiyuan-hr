@@ -13,7 +13,7 @@ export async function onRequest({ env }) {
       if (!id || id === "工號" || id === "作業時間") return;   // 跳過標題/metadata
       out.push({
         id, name: String(r[1] || "").trim(), store: String(r[2] || "").trim(),
-        base: num(r[3]), hourly: num(r[5]), bonus: num(r[8]),
+        base: num(r[3]), food: num(r[4]), hourly: num(r[5]), bonus: num(r[8]),
         type: String(r[14] || "").trim()
       });
     });
