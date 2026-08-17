@@ -310,7 +310,7 @@ function rowHTML(emp){
       <span class="av">${av}</span>
       <span class="who">
         <span class="n">${emp.name}<span class="rolepill ${rc}">${rl}</span>${emp.leave?`<span class="rolepill" style="background:#F0EDE6;color:#8C8477">${emp.leave}</span>`:''}${raise?`<span class="raisebadge">💰 建議加薪 ${raise}</span>`:''}${prefShiftHTML(emp.id)}</span>
-        <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?'　到職 '+fmt(nb.join):''}</span>
+        <span class="jd"><span class="pin">📍 ${emp.store}</span>${nb?(emp.joinKnown?'　到職 '+fmt(nb.join):'　⚠️ 尚未報到'):''}</span>
         ${salLineHTML(emp)}
       </span>
       <span class="kpi"><div class="pc" style="color:${cov.done?covColor(cov.pct):'#C3BFB6'}">${cov.done?cov.pct+'%':'—'}</div><div class="sub">技能 ${cov.done}/${cov.total}</div></span>

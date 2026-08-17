@@ -553,6 +553,7 @@ function statHTML(h){
     const pass=sc>=PASS;
     return `<span class="badge ${pass?'pass':'fail'}">${sc} 分・${pass?'通過':'未通過'}</span>`;
   }
+  if(!h.joinKnown) return `<span class="badge soon">尚未報到</span>`;
   if(daysSince(h.join)>=30) return `<span class="badge wait">待考核</span>`;
   const left=30-daysSince(h.join);
   return `<span class="badge soon">還有 ${left} 天</span>`;
@@ -576,7 +577,7 @@ function rowHTML(h,hi){
       <span class="av">${BUST(h.passed || !!h.eval)}</span>
       <span class="who">
         <span class="n"><span class="nm">${h.name}</span><span class="job ${h.job==='PT'?'pt':''}">${h.job==='PT'?'兼職':'正職'}</span>${pendingCount(h)?`<span class="pend">待核對 ${pendingCount(h)}</span>`:''}</span>
-        <span class="jd">到職 ${fmt(h.join)}</span>
+        <span class="jd">${h.joinKnown?('到職 '+fmt(h.join)):'⚠️ 尚未報到（到職日未定）'}</span>
         ${salHTML(h)}
       </span>
       <span class="stat">${statHTML(h)}<span class="goeval-pill">進入考核 ›</span></span>
