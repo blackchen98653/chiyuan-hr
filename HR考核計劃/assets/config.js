@@ -670,7 +670,8 @@ function personFromRow(r){
   return {
     id:   r[0]||"",
     name:(r[1]||"").trim(),
-    join: r[2] ? new Date(r[2]) : new Date(),
+    join: (r[2]!=null && String(r[2]).trim()!=="") ? new Date(r[2]) : new Date(),
+    joinKnown: !!(r[2]!=null && String(r[2]).trim()!==""),   // 大表到職日是否已填（空白＝尚未報到）
     store:(r[3]||"").trim(),
     role: String(r[4]||"").trim(),   // 職稱（店經理/儲備店經理/正職門店人員/兼職人員…）
     job: (String(r[4]).indexOf("兼")>=0 || String(r[4]).toUpperCase()==="PT") ? "PT" : "FT",
