@@ -942,9 +942,28 @@ function submitEval(){
   `;
   panel.scrollIntoView({behavior:'smooth', block:'start'});
 
-  // 若有設定雲端 URL 就送出
-  if(SYNC_URL){
-    syncToCloud(payload);
+  // 送出到雲端：優先用 Cloudflare /api/skill（正式後端）；沒有雲端才退回舊的同步碼機制
+  const USE_CLOUD = !!(window.CHIYUAN && window.CHIYUAN.CONFIG && window.CHIYUAN.CONFIG.USE_CLOUD);
+  if(USE_CLOUD){ saveSkillsToApi(payload); }
+  else if(SYNC_URL){ syncToCloud(payload); }
+}
+
+// 送出技能評核到 Cloudflare Pages Function（append 到「技能評核」「班別」分頁）
+async function saveSkillsToApi(payload){
+  const stat=document.getElementById('sync-stat');
+  const base=(window.CHIYUAN&&window.CHIYUAN.CONFIG&&window.CHIYUAN.CONFIG.API_BASE)||'/api';
+  try{
+    const res=await fetch(base+'/skill',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({store:payload.store, manager:payload.manager, evals:payload.evals, shifts:payload.shifts})});
+    const j=await res.json().catch(()=>({}));
+    if(res.ok && j && j.ok){
+      if(stat){ stat.textContent='✓ 雲端同步完成'; stat.style.background='var(--green)'; }
+      showToast('☁️ 已同步到雲端','success');
+    } else { throw new Error((j&&j.msg)||('HTTP '+res.status)); }
+  }catch(e){
+    if(stat){ stat.textContent='⚠️ 雲端同步失敗（已存本機）'; stat.style.background='var(--red)'; }
+    showToast('雲端同步失敗，資料已存本機，請稍後再送出一次','error');
+    console.error('saveSkillsToApi 失敗：',e);
   }
 }
 
