@@ -513,7 +513,7 @@ function doStorePw(){
   _pendingStore = '';
   _lockMode = 'choose';
   render();
-  if(SYNC_URL) loadFromCloud();
+  pullSkillsFromApi(false);
 }
 
 function backToChoose(){
@@ -543,7 +543,7 @@ function doLockSupervisor(){
   saveState();
   _lockMode='choose';
   render();
-  if(SYNC_URL) loadFromCloud();
+  pullSkillsFromApi(false);
 }
 
 // 保留舊版 doLock 以防誤呼叫
@@ -1204,22 +1204,16 @@ async function loadFromCloud(){
 
 // ── 手動從雲端拉最新評核(含戰情室 push 的修改) ──
 async function manualReloadFromCloud(btn){
-  if(btn){
-    btn.textContent = '⏳';
-    btn.disabled = true;
-  }
+  if(btn){ btn.textContent = '⏳'; btn.disabled = true; }
   const before = JSON.stringify(state.evals)+JSON.stringify(state.shifts);
-  await loadFromCloud();
+  let ok=false;
+  try{ ok = await pullSkillsFromApi(true); }   // 手動拉：一律以雲端為準（含戰情室 push 的修改）
+  catch(e){ console.log('[manualReload]', e.message); }
   const after = JSON.stringify(state.evals)+JSON.stringify(state.shifts);
-  if(btn){
-    btn.textContent = '🔄';
-    btn.disabled = false;
-  }
-  if(before === after){
-    showToast('☁ 雲端無新資料 (或對應不到)','info');
-  }else{
-    showToast('☁ 已更新！','success');
-  }
+  if(btn){ btn.textContent = '🔄'; btn.disabled = false; }
+  if(!ok){ showToast('☁ 連線失敗，請稍後再試','error'); }
+  else if(before === after){ showToast('☁ 已是最新','info'); }
+  else{ showToast('☁ 已更新！','success'); }
 }
 
 // ── Toast ──
@@ -1245,30 +1239,44 @@ function showToast(msg, type){
 })();
 render();
 
-// ── 雲端(Cloudflare /api)：載入大表在職名單 + 已匯入/已送出的技能與班別 ──
+// ── 從 Cloudflare /api/skills 拉最新技能/班別，合併進本機 ──
+// force=true：一律以雲端為準覆蓋（手動「重新拉取」用，可吃到戰情室 push 的修改）
+// force=false：逐人比時間，雲端較新(或本機沒有)才覆蓋，保留本機「較新且尚未送出」的編輯
+async function pullSkillsFromApi(force){
+  if(!(window.CHIYUAN && window.CHIYUAN.CONFIG && window.CHIYUAN.CONFIG.USE_CLOUD)) return false;
+  const base=window.CHIYUAN.CONFIG.API_BASE;
+  const j = await (await fetch(base + '/skills?t=' + Date.now())).json();   // 加時間戳避開任何快取
+  if(!(j && j.evals)) return false;
+  const cloudEvals=j.evals||{}, cloudShifts=j.shifts||{}, cloudTimes=j.times||{};
+  state.evals = state.evals || {}; state.shifts = state.shifts || {}; state.evalMeta = state.evalMeta || {};
+  Object.keys(cloudEvals).forEach(id=>{
+    const cT = cloudTimes[id] ? new Date(cloudTimes[id]).getTime() : 0;
+    const lT = state.evalMeta[id] ? new Date(state.evalMeta[id]).getTime() : 0;
+    if(force || state.evals[id]==null || cT >= lT){          // 雲端較新(或強制/本機無) → 用雲端
+      state.evals[id] = cloudEvals[id];
+      if(cloudShifts[id]!=null) state.shifts[id] = cloudShifts[id];
+      if(cT) state.evalMeta[id] = new Date(cloudTimes[id]).toISOString();
+    }
+  });
+  Object.keys(cloudShifts).forEach(id=>{ if(state.shifts[id]==null) state.shifts[id]=cloudShifts[id]; });
+  saveState();
+  render();
+  return true;
+}
+
+// ── 啟動：載入大表在職名單 + 已送出的技能與班別（雲端較新為準） ──
 (async function(){
   try{
     if(!(window.CHIYUAN && window.CHIYUAN.CONFIG && window.CHIYUAN.CONFIG.USE_CLOUD)) return;
     const base=window.CHIYUAN.CONFIG.API_BASE;
-    // 員工清單直接讀大表：加人/刪人即時反映（工號空的略過，因技能資料以工號為鍵）
     try{
-      const r=await (await fetch(base+'/roster')).json();
+      const r=await (await fetch(base+'/roster?t='+Date.now())).json();
       const rows=r.values||[];
       const live=rows.filter(x=>String(x[1]||'').trim())   // 只要有姓名（工號空的加盟同仁也顯示）
         .map(x=>({ id:String(x[0]||'').trim()||String(x[1]).trim(), name:String(x[1]).trim(), store:normStore(x[3]), role:String(x[4]||'').trim() }));
       if(live.length){ EMPLOYEES=live; render(); }
     }catch(e){}
-    const j = await (await fetch(base + '/skills')).json();
-    if(j && j.evals){
-      state.evals  = Object.assign({}, j.evals,  state.evals  || {});
-      state.shifts = Object.assign({}, j.shifts||{}, state.shifts || {});
-      // 每人最後評核時間（雲端 times 毫秒）→ 併入 evalMeta（取較新者）
-      if(j.times){ state.evalMeta=state.evalMeta||{};
-        Object.keys(j.times).forEach(id=>{ const iso=new Date(j.times[id]).toISOString();
-          if(!state.evalMeta[id] || new Date(iso)>new Date(state.evalMeta[id])) state.evalMeta[id]=iso; }); }
-      saveState();
-      render();
-    }
+    await pullSkillsFromApi(false);
   }catch(e){}
 })();
 </script>
