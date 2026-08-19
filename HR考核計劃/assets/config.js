@@ -614,7 +614,7 @@ const EMPLOYEES = [
   {id:'CY0074',name:'黃濬宇',store:'頂溪店',role:'正職門店人員'} // 7月編制頂溪,人在大安
 ];
 const LEVELS = {
-  rusty:   {label:'未接觸', short:'未', color:'#C0392B', weight:0.0},
+  rusty:   {label:'未接觸', short:'未', color:'#9AA0A6', weight:0.0},
   basic:   {label:'需協助', short:'需', color:'#C88B00', weight:0.4},
   normal:  {label:'可獨立', short:'獨', color:'#2E6FD8', weight:0.75},
   skilled: {label:'熟練',   short:'熟', color:'#3E9A6A', weight:0.9},
