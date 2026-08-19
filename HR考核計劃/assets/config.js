@@ -693,7 +693,7 @@ function parseSelf(v){
 }
 
 async function fetchRoster(){
-  const j = await (await fetch(`${CONFIG.API_BASE}/roster`)).json();
+  const j = await (await fetch(`${CONFIG.API_BASE}/roster?t=${Date.now()}`)).json();
   const rows = j.values || j.rows || j;
   return (rows||[]).map(personFromRow);
 }
@@ -752,7 +752,7 @@ const DataAPI = {
     if(!CONFIG.USE_CLOUD) return false;
     if(this._salLoaded) return true;
     try{
-      const j=await (await fetch(`${CONFIG.API_BASE}/salary`)).json();
+      const j=await (await fetch(`${CONFIG.API_BASE}/salary?t=${Date.now()}`)).json();
       _salById={}; _salByName={};
       (j.salary||[]).forEach(s=>{ if(s.id) _salById[s.id]=s; if(s.name) _salByName[(s.name||'')+'|'+(s.store||'')]=s; });
       this._salLoaded=true; return true;
@@ -822,7 +822,7 @@ const DataAPI = {
   /* --- 雲端技能資料（USE_CLOUD 時；把雲端資料同步進本機快取，其餘讀取邏輯不變） --- */
   async fetchSkillsFromCloud(){
     if(!CONFIG.USE_CLOUD) return null;
-    try{ const j=await (await fetch(`${CONFIG.API_BASE}/skills`)).json(); return j; }catch(e){ console.error("讀取雲端技能失敗：",e); return null; }
+    try{ const j=await (await fetch(`${CONFIG.API_BASE}/skills?t=${Date.now()}`)).json(); return j; }catch(e){ console.error("讀取雲端技能失敗：",e); return null; }
   },
   // 把雲端技能/班別覆蓋進 localStorage skill_eval_v2，讓 getSkillState/skillCoverage 直接可用
   async syncSkillsToLocal(){
