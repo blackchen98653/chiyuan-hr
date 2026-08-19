@@ -827,12 +827,9 @@ function setLvl(skill, lvl){
   if(!openEmpId) return;
   if(prefillMark[openEmpId]) delete prefillMark[openEmpId][skill];
   if(!state.evals[openEmpId]) state.evals[openEmpId]={};
-  if(state.evals[openEmpId][skill]===lvl){
-    // 同樣按一次 = 取消
-    delete state.evals[openEmpId][skill];
-  }else{
-    state.evals[openEmpId][skill] = lvl;
-  }
+  // 一律設定該等級（不再「同一顆再按一次=清空」，因為清空無法同步到雲端會被拉回）。
+  // 要歸零 → 直接點「未接觸(0)」，它會確實存成 0。
+  state.evals[openEmpId][skill] = lvl;
   touchEmp(openEmpId);
   saveState();
   const p = EMPLOYEES.find(e=>e.id===openEmpId);
