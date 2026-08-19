@@ -38,9 +38,12 @@
   .storebtns button{font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--muted);background:#fff;border:1.5px solid var(--line);border-radius:999px;padding:9px 15px;transition:all .12s}
   .storebtns button:hover{border-color:#DCD3C3}
   .storebtns button.on{background:var(--tea);border-color:var(--tea);color:#fff}
-  .ctrl{margin-bottom:14px}
-  .ctrl input{width:100%;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px}
+  .ctrl{margin-bottom:14px;display:flex;gap:8px}
+  .ctrl input{flex:1;min-width:0;font-family:inherit;font-size:15px;color:var(--ink);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px}
   .ctrl input:focus{outline:none;border-color:var(--tea);box-shadow:0 0 0 4px var(--tea-soft)}
+  .syncbtn{flex:none;font-family:inherit;font-size:13.5px;font-weight:800;color:var(--tea,#34503F);background:#fff;border:1.5px solid var(--line);border-radius:12px;padding:11px 13px;cursor:pointer;white-space:nowrap}
+  .syncbtn:active{transform:translateY(1px)}
+  .syncbtn.spin{opacity:.6;pointer-events:none}
 
   .store-head{display:flex;align-items:center;gap:10px;margin:22px 2px 10px}
   .store-head .nm{font-size:17px;font-weight:900;color:var(--tea-deep)}
@@ -153,7 +156,7 @@
   <div id="raiseBanner"></div>
 
   <div class="storebtns" id="fStore"></div>
-  <div class="ctrl"><input id="fName" type="text" placeholder="搜尋姓名…"></div>
+  <div class="ctrl"><input id="fName" type="text" placeholder="搜尋姓名…"><button id="btnSync" class="syncbtn" title="同步最新評核">🔄 同步</button></div>
 
   <div class="legend" id="legend"></div>
   <div id="body"></div>
@@ -403,6 +406,24 @@ document.addEventListener('click',e=>{
   else if(!(e.target.closest && e.target.closest('.citip'))) hideCitip();
 });
 window.addEventListener('scroll',hideCitip,true);
+
+/* ===== 自動同步：切回本頁 / 手動按鈕，重抓雲端最新評核並重繪 ===== */
+let _syncing=false;
+async function autoSync(manual){
+  if(_syncing) return;
+  if(!manual && document.visibilityState!=='visible') return;
+  _syncing=true;
+  const b=$('btnSync'); if(b){ b.classList.add('spin'); b.textContent='⏳ 同步中'; }
+  try{ await H.DataAPI.syncSkillsToLocal(); render(); }catch(e){}
+  if(b){ b.classList.remove('spin'); b.textContent='🔄 同步'; }
+  _syncing=false;
+}
+(function bindSync(){
+  const b=$('btnSync'); if(b) b.addEventListener('click',()=>autoSync(true));
+  // 切回本分頁 / 視窗重新取得焦點 → 自動抓最新（不打斷正在閱讀，只在回到頁面時）
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') autoSync(false); });
+  window.addEventListener('focus',()=>autoSync(false));
+})();
 </script>
 </body>
 </html>
