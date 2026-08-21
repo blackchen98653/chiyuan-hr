@@ -193,7 +193,8 @@ async function init(){
   PEOPLE.forEach(p=>{ const e=H.DataAPI.loadEval(p); if(e){ p.eval=e; p.drinkOn=!!e.drinkOn; } });
   // 員工清單＝大表在職名單（加人/刪人即時反映）；只取 12 門市
   STAFF = PEOPLE.filter(p=>(p.name||'').trim())
-    .map(p=>{ const si=storeInfo(p.store); return Object.assign({}, p, {store:si.store, leave:si.tag}); })
+    // 技能鍵：工號優先、空工號(板橋等)退回姓名，與技能評核頁一致，才對得上技能資料
+    .map(p=>{ const si=storeInfo(p.store); return Object.assign({}, p, {id:(p.id||p.name), store:si.store, leave:si.tag}); })
     .filter(p=> SK.EVALUABLE_STORES.indexOf(p.store)>=0 );
 
   const wrap=$('fStore');
