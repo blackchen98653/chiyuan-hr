@@ -370,7 +370,7 @@ let ROSTER={}, _rosterP=null;
 function loadRoster(){
   if(_rosterP) return _rosterP;              // 只建一次，避免重複載入
   _rosterP=(async()=>{
-    const [people] = await Promise.all([H.DataAPI.getAll(), H.DataAPI.fetchSalary()]);
+    const [people] = await Promise.all([H.DataAPI.getAll(), H.DataAPI.fetchSalary(), H.DataAPI.fetchEvals()]);
     ROSTER={};
     people.forEach(p=>{
       const ev = H.DataAPI.loadEval(p);

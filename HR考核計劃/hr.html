@@ -189,6 +189,7 @@ let PEOPLE=[], STAFF=[], curStore='', onlyRaise=false;
 async function init(){
   await H.DataAPI.syncSkillsToLocal();   // 雲端模式：先把技能/班別抓進本機再顯示
   await H.DataAPI.fetchSalary();          // 薪資（判斷建議加薪）
+  await H.DataAPI.fetchEvals();           // 新人考核（跨裝置同步）
   PEOPLE = await H.DataAPI.getAll();
   PEOPLE.forEach(p=>{ const e=H.DataAPI.loadEval(p); if(e){ p.eval=e; p.drinkOn=!!e.drinkOn; } });
   // 員工清單＝大表在職名單（加人/刪人即時反映）；只取 12 門市
