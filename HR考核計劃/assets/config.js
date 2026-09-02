@@ -700,6 +700,7 @@ async function fetchRoster(){
 
 let _cache = null;
 let _salById = {}, _salByName = {};
+let _evalById = {}, _evalByName = {};
 const DataAPI = {
   async getAll(force){
     if (!CONFIG.USE_CLOUD) return SAMPLE_PEOPLE;
@@ -787,13 +788,32 @@ const DataAPI = {
     }
   },
 
-  /* --- 考核紀錄（現存本機；接雲端寫入後改這裡） --- */
+  /* --- 新人考核紀錄（雲端＋本機，跨裝置同步） --- */
+  // 先抓雲端所有人最新考核到快取；manager loadRoster / HR init 會先 await 這個
+  async fetchEvals(){
+    if(!CONFIG.USE_CLOUD) return false;
+    try{
+      const j=await (await fetch(`${CONFIG.API_BASE}/evals?t=${Date.now()}`)).json();
+      _evalById={}; _evalByName={};
+      (j.evals||[]).forEach(e=>{ if(e.id) _evalById[e.id]=e; _evalByName[(e.name||'')+'|'+(e.store||'')]=e; });
+      return true;
+    }catch(e){ return false; }
+  },
   loadEval(p){
-    try{ const raw=localStorage.getItem(`chiyuan:eval:${p.store}:${p.name}`);
-      if(!raw) return null;
-      const e=JSON.parse(raw); e.date=new Date(e.date); if(e.updated) e.updated=new Date(e.updated);
-      return e;
-    }catch(e){ return null; }
+    // 本機
+    let local=null;
+    try{ const raw=localStorage.getItem(`chiyuan:eval:${p.store}:${p.name}`); if(raw) local=JSON.parse(raw); }catch(e){}
+    // 雲端（工號優先、空的退回姓名）
+    const cloud=(p.id&&_evalById[p.id]) || _evalByName[(p.name||'')+'|'+(p.store||'')] || null;
+    let chosen;
+    if(cloud && local){
+      const ct=Date.parse(cloud.updated||cloud.date||0)||0, lt=Date.parse(local.updated||local.date||0)||0;
+      chosen = ct>=lt ? cloud : local;          // 較新的為準（雲端與本機同時間 → 以雲端）
+    }else chosen = cloud || local;
+    if(!chosen) return null;
+    const e=Object.assign({}, chosen);
+    e.date=e.date?new Date(e.date):new Date(); if(e.updated) e.updated=new Date(e.updated);
+    return e;
   },
   saveEval(p, ev){
     const payload={ ...ev, drinkOn:p.drinkOn, job:p.job, store:p.store, name:p.name,
