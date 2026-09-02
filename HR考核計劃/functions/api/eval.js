@@ -8,6 +8,7 @@ export async function onRequest({ request, env }) {
     await appendRows(env, "新人考核!A1", [[
       now, b.id || "", b.name || "", b.store || "", b.job || "",
       b.sc || "", b.pass ? 1 : 0, JSON.stringify(b.levels || {}), b.memo || "", b.date || "", b.updated || "",
+      b.drinkOn ? 1 : 0,
     ]]);
     return json({ ok: true });
   } catch (e) { return json({ ok: false, msg: String(e) }); }
