@@ -367,10 +367,10 @@ const ghpChipHTML = p => {
 
 /* ===== 名冊（透過 DataAPI，之後自動改讀雲端） ===== */
 let ROSTER={}, _rosterP=null;
-function loadRoster(){
-  if(_rosterP) return _rosterP;              // 只建一次，避免重複載入
+function loadRoster(force){
+  if(_rosterP && !force) return _rosterP;    // 只建一次；force=true 強制重抓（跨裝置同步）
   _rosterP=(async()=>{
-    const [people] = await Promise.all([H.DataAPI.getAll(), H.DataAPI.fetchSalary(), H.DataAPI.fetchEvals()]);
+    const [people] = await Promise.all([H.DataAPI.getAll(force), H.DataAPI.fetchSalary(), H.DataAPI.fetchEvals()]);
     ROSTER={};
     people.forEach(p=>{
       const ev = H.DataAPI.loadEval(p);
@@ -467,6 +467,21 @@ document.addEventListener('click',e=>{
   else if(!(e.target.closest && e.target.closest('.citip'))) hideCitip();
 });
 window.addEventListener('scroll',hideCitip,true);
+
+/* ===== 名單頁自動同步：切回本頁 / 視窗取得焦點 → 重抓雲端(新人考核/GHP/名冊)並重繪 ===== */
+let _syncingRoster=false;
+async function autoSyncRoster(){
+  if(_syncingRoster) return;
+  if(document.visibilityState!=='visible') return;
+  if($('roster').style.display!=='block') return;   // 只在名單頁刷新，不打斷考核中/選單頁
+  _syncingRoster=true;
+  const st=curStore;
+  try{ await loadRoster(true); }catch(e){}
+  if(curStore===st && $('roster').style.display==='block') showRoster();
+  _syncingRoster=false;
+}
+document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible') autoSyncRoster(); });
+window.addEventListener('focus', autoSyncRoster);
 
 // 店經理點 GHP → 切換確認狀態並同步雲端
 function toggleGhp(chip){
