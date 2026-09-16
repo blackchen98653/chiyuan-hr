@@ -868,6 +868,7 @@ const DataAPI = {
   async fetchOnboard(person){
     if(!CONFIG.USE_CLOUD) return null;
     const q=new URLSearchParams(); if(person.id) q.set("id",person.id); if(person.name) q.set("name",person.name); if(person.store) q.set("store",person.store);
+    q.set("t", Date.now());
     try{ const j=await (await fetch(`${CONFIG.API_BASE}/onboard?${q}`)).json(); return (j&&j.levels)?j:null; }catch(e){ return null; }
   },
 
