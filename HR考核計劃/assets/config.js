@@ -815,8 +815,10 @@ const DataAPI = {
     e.date=e.date?new Date(e.date):new Date(); if(e.updated) e.updated=new Date(e.updated);
     return e;
   },
+  // 取某人雲端新人考核(含 levels)；工號優先、空工號退回姓名+門市。需先 fetchEvals()
+  onboardOf(p){ if(!p) return null; return (p.id&&_evalById[p.id]) || _evalByName[(p.name||'')+'|'+(p.store||'')] || null; },
   saveEval(p, ev){
-    const payload={ ...ev, drinkOn:p.drinkOn, job:p.job, store:p.store, name:p.name,
+    const payload={ ...ev, id:p.id||"", drinkOn:p.drinkOn, job:p.job, store:p.store, name:p.name,
       sc:score(ev.levels,p.job,p.drinkOn), pass:score(ev.levels,p.job,p.drinkOn)>=PASS };
     try{ localStorage.setItem(`chiyuan:eval:${p.store}:${p.name}`, JSON.stringify(payload)); }catch(e){}
     if (CONFIG.USE_CLOUD){
