@@ -198,9 +198,12 @@ let prefillMark = {};   // { 工號: { 技能key:true } }
 // opts.verbose=true 時會跳 toast 提示結果（給手動按鈕用）；預設(靜默)給 openEval 自動呼叫用，失敗不出聲
 function applyOnboardPrefill(empId, opts){
   opts = opts || {};
-  return _gscriptRun('getOnboardEval', empId).then(function(oe){
+  const per = EMPLOYEES.find(e=>e.id===empId);
+  if(!per) return Promise.resolve();
+  const isRealId = /^[A-Za-z]/.test(per.id||'');           // 真工號(CY/HQ);空工號者退回姓名+門市比對
+  return H.DataAPI.fetchOnboard({ id:isRealId?per.id:'', name:per.name, store:per.store }).then(function(oe){
     if(!oe){
-      if(opts.verbose) showToast('這位夥伴沒有新人考核資料可拉','error');
+      if(opts.verbose) showToast('這位夥伴沒有新人考核資料可帶入','error');
       return;
     }
     if(!state.evals[empId]) state.evals[empId] = {};
@@ -720,6 +723,7 @@ function openEval(empId){
   // 防止 body 滾動
   document.body.style.overflow='hidden';
   renderModal(p);
+  applyOnboardPrefill(empId);   // 自動帶入新人考核成績(靜默;只補未評項、標記可改，並重繪)
 
   setTimeout(()=>{
     document.getElementById('modal-back').classList.add('show');
