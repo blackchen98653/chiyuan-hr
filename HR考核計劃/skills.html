@@ -196,32 +196,34 @@ let prefillMark = {};   // { 工號: { 技能key:true } }
 
 // 對某位員工套用帶入：只補 SM 還沒評過的技能，不覆蓋既有評分
 // opts.verbose=true 時會跳 toast 提示結果（給手動按鈕用）；預設(靜默)給 openEval 自動呼叫用，失敗不出聲
+// 把某人的新人考核成績帶入技能(用已抓好的雲端考核快取 onboardOf；不再打死掉的 Apps Script)
+// 回傳帶入項數。opts.render=true 會重繪 modal；opts.verbose=true 會跳 toast
 function applyOnboardPrefill(empId, opts){
   opts = opts || {};
   const per = EMPLOYEES.find(e=>e.id===empId);
-  if(!per) return Promise.resolve();
-  const isRealId = /^[A-Za-z]/.test(per.id||'');           // 真工號(CY/HQ);空工號者退回姓名+門市比對
-  return H.DataAPI.fetchOnboard({ id:isRealId?per.id:'', name:per.name, store:per.store }).then(function(oe){
-    if(!oe){
-      if(opts.verbose) showToast('這位夥伴沒有新人考核資料可帶入','error');
-      return;
-    }
-    if(!state.evals[empId]) state.evals[empId] = {};
-    if(!prefillMark[empId]) prefillMark[empId] = {};
-    // 規則：空格→補；已有值且衝突時，比較「新人考核日 vs 該人技能評核最後更新日」，較新的為主
-    const smUpdated = (state.evalMeta && state.evalMeta[empId]) || null;
-    const res = H.DataAPI.mergeOnboardIntoSkills(state.evals[empId], oe, smUpdated);
-    state.evals[empId] = res.evals;
-    Object.keys(res.marks).forEach(function(sk){ prefillMark[empId][sk] = true; });
-    const changed = res.filled + res.overwritten;
-    if(changed){ saveState(); const p = EMPLOYEES.find(e=>e.id===empId); renderModal(p); }
-    if(opts.verbose){
-      if(changed) showToast('✅ 已帶入 '+changed+' 項新人考核評分'+(res.overwritten?'（更新較舊的 '+res.overwritten+' 項）':''),'success');
-      else showToast('沒有可帶入的新項目(可能都已評過)','success');
-    }
-  }).catch(function(err){
-    if(opts.verbose) showToast('❌ 拉取新人考核失敗：'+(err&&err.message||'未知錯誤'),'error');
-  });
+  if(!per) return 0;
+  const oe = H.DataAPI.onboardOf({ id:/^[A-Za-z]/.test(per.id||'')?per.id:'', name:per.name, store:per.store });
+  if(!oe || !oe.levels){ if(opts.verbose) showToast('這位夥伴沒有新人考核資料可帶入','error'); return 0; }
+  if(!state.evals[empId]) state.evals[empId] = {};
+  if(!prefillMark[empId]) prefillMark[empId] = {};
+  const smUpdated = (state.evalMeta && state.evalMeta[empId]) || null;
+  const res = H.DataAPI.mergeOnboardIntoSkills(state.evals[empId], oe, smUpdated);
+  state.evals[empId] = res.evals;
+  Object.keys(res.marks).forEach(function(sk){ prefillMark[empId][sk] = true; });
+  const changed = res.filled + res.overwritten;
+  if(changed) saveState();
+  if(opts.render && changed){ const p = EMPLOYEES.find(e=>e.id===empId); if(p) renderModal(p); }
+  if(opts.verbose){
+    if(changed) showToast('✅ 已帶入 '+changed+' 項新人考核評分'+(res.overwritten?'（更新較舊 '+res.overwritten+' 項）':''),'success');
+    else showToast('沒有可帶入的新項目(可能都已評過)','success');
+  }
+  return changed;
+}
+// 全店批次帶入：技能頁載入時把每個人的新人考核成績先灌進去，列表就直接看得到
+function applyAllOnboardPrefills(){
+  let total=0;
+  (EMPLOYEES||[]).forEach(e=>{ total += applyOnboardPrefill(e.id, {}); });
+  return total;
 }
 
 
@@ -723,7 +725,7 @@ function openEval(empId){
   // 防止 body 滾動
   document.body.style.overflow='hidden';
   renderModal(p);
-  applyOnboardPrefill(empId);   // 自動帶入新人考核成績(靜默;只補未評項、標記可改，並重繪)
+  applyOnboardPrefill(empId, {render:true});   // 自動帶入新人考核成績(靜默;只補未評項、標記可改，並重繪)
 
   setTimeout(()=>{
     document.getElementById('modal-back').classList.add('show');
@@ -1278,6 +1280,8 @@ async function pullSkillsFromApi(force){
       if(live.length){ EMPLOYEES=live; render(); }
     }catch(e){}
     await pullSkillsFromApi(false);
+    // 抓全體新人考核 → 批次帶入技能(列表即可看到通過者的成績)
+    try{ await H.DataAPI.fetchEvals(); if(applyAllOnboardPrefills()>0) render(); }catch(e){}
   }catch(e){}
 })();
 </script>
