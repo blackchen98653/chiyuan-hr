@@ -294,6 +294,23 @@ function chipsHTML(nb){
 }
 
 function toggleOnlyRaise(){ onlyRaise=!onlyRaise; render(); }
+// 一鍵匯出「建議加薪名單」CSV（依目前門市範圍；Excel 可直接開）
+function exportRaiseCSV(){
+  const scope=(curStore?STAFF.filter(e=>e.store===curStore):STAFF).filter(e=>H.DataAPI.raiseFor(e));
+  if(!scope.length){ alert('目前沒有建議加薪的夥伴'); return; }
+  const rows=[['工號','姓名','門市','類別','目前薪資','職級職等獎金','建議調整','調整後']];
+  scope.forEach(p=>{
+    const s=H.DataAPI.salaryOf(p)||{};
+    const hourly = s.type==='時薪制' || (s.hourly!=null && s.base==null);
+    if(hourly) rows.push([p.id||'',p.name,p.store,'兼職(時薪)',s.hourly||'','','時薪+10',(s.hourly||0)+10]);
+    else rows.push([p.id||'',p.name,p.store,'正職(月薪)',s.base||'',s.bonus||0,'本薪+1,000',(s.base||0)+1000]);
+  });
+  const csv='﻿'+rows.map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='建議加薪名單_'+new Date().toISOString().slice(0,10)+(curStore?'_'+curStore:'')+'.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
 const nf = n => (n==null?'—':Number(n).toLocaleString('en-US'));
 // 目前薪資：正職 本薪・伙食・職獎；兼職 時薪
 function salLineHTML(emp){
@@ -338,6 +355,7 @@ function render(){
     rb.style.display='block';
     rb.className='raise-banner'+(onlyRaise?' active':'');
     rb.innerHTML=`<span class="rb-ic">💰</span><span class="rb-txt"><b>${raiseScope.length} 位</b>夥伴通過考核，建議調整薪資</span>`+
+      `<button class="rb-btn" onclick="exportRaiseCSV()">匯出名單</button>`+
       `<button class="rb-btn" onclick="toggleOnlyRaise()">${onlyRaise?'顯示全部':'只看這些'}</button>`;
   } else { rb.style.display='none'; onlyRaise=false; }
   if(onlyRaise) list=list.filter(e=>H.DataAPI.raiseFor(e));
