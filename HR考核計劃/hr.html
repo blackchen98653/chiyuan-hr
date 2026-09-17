@@ -135,6 +135,8 @@
   .raisebadge{display:inline-block;font-size:11px;font-weight:800;color:#fff;background:#3E7A54;border-radius:6px;padding:2px 8px;margin-left:6px;white-space:nowrap;box-shadow:0 1px 4px rgba(62,122,84,.3)}
   .who .sal{display:block;font-size:11.5px;font-weight:800;color:#8A6D3B;margin-top:3px;line-height:1.4}
   .row.needraise{box-shadow:inset 4px 0 0 #3E7A54, var(--shadow,0 1px 3px rgba(0,0,0,.06))}
+  .carry-note{font-size:11.5px;font-weight:800;color:#2C5A3E;background:#EAF5EE;border:1px solid #B9DCC5;border-radius:8px;padding:6px 10px;margin:2px 0 8px;line-height:1.5}
+  .skm.carried .skm-n{color:#8A6D3B}
   .empty{text-align:center;color:var(--muted);padding:40px 10px;font-size:14px}
   .legend{font-size:11.5px;color:var(--muted);margin:6px 2px 14px;line-height:1.9}
   .legend .k{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 3px 0 8px}
@@ -240,27 +242,45 @@ function groupCov(ev, gk){
   g.skills.forEach(sk=>{ const v=ev[sk]; if(v&&LV[v]){ done++; score+=LV[v].weight; } });
   return { short:g.short, label:g.label, color:g.color, done, total:g.skills.length, pct:Math.round(score/g.skills.length*100) };
 }
-function skillBlockHTML(empId){
-  const cov=H.DataAPI.skillCoverage(empId);
-  if(cov.done===0) return {html:`<div class="sk-none">技能尚未評核</div>`, cov};
-  const ev=cov.evals, gkeys=Object.keys(SK.GROUPS);
-  // 收合：五大類覆蓋（顏色＝該類熟練度）
-  const chips=gkeys.map(gk=>{ const c=groupCov(ev,gk); const col=c.done?covColor(c.pct):'#C3BFB6';
+// 由新人考核帶入的技能等級（尚未送出的建議值）：{ 技能key: 等級 }
+function onboardSkills(emp){
+  const oe=H.DataAPI.onboardOf({ id:/^[A-Za-z]/.test(emp.id||'')?emp.id:'', name:emp.name, store:emp.store });
+  if(!oe || !oe.levels) return {};
+  return H.DataAPI.prefillFromOnboard(oe) || {};
+}
+// 依一組技能物件算覆蓋(分母 28)
+function covOf(ev){ const keys=SK.ALL_KEYS; let sc=0,done=0; keys.forEach(k=>{const v=ev[k]; if(v&&LV[v]){sc+=LV[v].weight;done++;}}); return {done,total:keys.length,pct:Math.round(sc/keys.length*100),evals:ev}; }
+function skillBlockHTML(emp){
+  const empId=emp.id;
+  const cov=H.DataAPI.skillCoverage(empId);      // 已送出的正式技能評核
+  const sub=cov.evals||{};
+  const carried=onboardSkills(emp);              // 新人考核帶入(未送出)
+  const merged=Object.assign({}, carried, sub);  // 已送出者優先
+  const isCarried = sk => carried[sk]!=null && sub[sk]==null;
+  const submittedNone = cov.done===0;
+  const hasAny=Object.keys(merged).some(k=>merged[k]&&LV[merged[k]]);
+  if(!hasAny){
+    const note = isPassed(emp) ? '✅ 新人考已通過・技能評核尚未評測' : '技能尚未評核';
+    return {html:`<div class="sk-none">${note}</div>`, cov};
+  }
+  const gkeys=Object.keys(SK.GROUPS);
+  const chips=gkeys.map(gk=>{ const c=groupCov(merged,gk); const col=c.done?covColor(c.pct):'#C3BFB6';
     return `<div class="gc" style="border-color:${col}55"><div class="gn" style="color:${col}">${c.short}</div><div class="gd" style="color:${col}">${c.done}/${c.total}</div></div>`;
   }).join('');
-  // 展開：完整技能清單（依分類，名稱＋等級）
   let detail='';
   gkeys.forEach(gk=>{ const g=SK.GROUPS[gk];
-    const items=g.skills.filter(sk=>ev[sk]&&LV[ev[sk]]).map(sk=>{ const lv=ev[sk];
-      const idx=ORDER.indexOf(lv), col=LV[lv].color;
-      let bars=''; for(let n=0;n<5;n++) bars+=`<i${n<=idx?` style="background:${col}"`:''}></i>`;
-      return `<span class="skm" title="${SK.LABELS[sk]}：${LV[lv].label}"><span class="skm-n">${SK.LABELS[sk]}</span><span class="skm-bar">${bars}</span></span>`;
+    const items=g.skills.filter(sk=>merged[sk]&&LV[merged[sk]]).map(sk=>{ const lv=merged[sk];
+      const idx=ORDER.indexOf(lv), col=LV[lv].color, cIn=isCarried(sk);
+      let bars=''; for(let n=0;n<5;n++) bars+=`<i${n<=idx?` style="background:${col}${cIn?';opacity:.5':''}"`:''}></i>`;
+      return `<span class="skm${cIn?' carried':''}" title="${SK.LABELS[sk]}：${LV[lv].label}${cIn?'（新人考核帶入，尚未送出）':''}"><span class="skm-n">${SK.LABELS[sk]}${cIn?' ·帶入':''}</span><span class="skm-bar">${bars}</span></span>`;
     }).join('');
     if(items) detail+=`<div class="skg" style="color:${g.color}">${g.label}</div><div class="skl">${items}</div>`;
   });
+  const banner = submittedNone ? `<div class="carry-note">✅ 新人考已通過・技能評核尚未評測 —— 下列為新人考核帶入，店經理送出後才正式計入</div>` : '';
   const last=H.DataAPI.lastSkillEval(empId);
-  const lastTxt=last?`最後評核 ${last.getMonth()+1}/${last.getDate()}`:'';
-  return { html:`<div class="gcov"><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">${chips}</div><span class="gcov-hint">${lastTxt?lastTxt+'　':''}▸ 明細</span></div><div class="skdetail">${detail}</div>`, cov };
+  const lastTxt = submittedNone ? '新人考帶入' : (last?`最後評核 ${last.getMonth()+1}/${last.getDate()}`:'');
+  return { html:`${banner}<div class="gcov"><div style="display:flex;gap:6px;flex:1;flex-wrap:wrap">${chips}</div><span class="gcov-hint">${lastTxt?lastTxt+'　':''}▸ 明細</span></div><div class="skdetail">${detail}</div>`,
+           cov: submittedNone ? covOf(merged) : cov };
 }
 // 偏好班別（放名字旁，只顯示有設定的）
 function prefShiftHTML(empId){
@@ -323,7 +343,7 @@ function salLineHTML(emp){
 }
 function rowHTML(emp){
   const [rl,rc]=shortRole(emp.role);
-  const {html:skblock,cov}=skillBlockHTML(emp.id);
+  const {html:skblock,cov}=skillBlockHTML(emp);
   const nb=isNewbie(emp)?emp:null;
   const av=emp.name?emp.name[emp.name.length-1]:'?';
   const raise=H.DataAPI.raiseFor(emp);
